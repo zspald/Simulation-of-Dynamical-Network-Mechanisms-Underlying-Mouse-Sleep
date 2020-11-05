@@ -1,4 +1,4 @@
-# Mouse-Sleep-Models-with-Periods-of-Optogenetic-Activation
+# Simulation of Dynamical Network Mechanisms Underlying Mouse Sleep Python
 Modification of the mathematical model surrounding the sleep dynamics of mice described in "Coupled Flip-Flop Model for REM Sleep Regulation in the Rat" by accounting for changes in sleep patterns due to optogenetic stimulation of a desired brain region. Code created with the help of Dr. Weber in the Weber Lab at the Perelman School of Medicine at the University of Pennsylvania.
 
 # Images
