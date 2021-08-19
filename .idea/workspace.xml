@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="d9a82a59-a254-4ae8-a726-85b8a1ba4d66" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectId" id="1c1STc50q2GifCMfA2TivsMv7NO" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/sleep_models_optogenetic_activation_N_pulses.py" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RunManager">
+    <configuration name="sleep_models" type="PythonConfigurationType" factoryName="Python">
+      <module name="Code" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="D:\Anaconda\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/sleep_models_optogenetic_activation_N_pulses.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="d9a82a59-a254-4ae8-a726-85b8a1ba4d66" name="Default Changelist" comment="" />
+      <created>1589694614133</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1589694614133</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="450" y="196" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1589695895008">
+      <screen x="72" y="0" width="1848" height="1080" />
+    </state>
+    <state x="450" y="196" key="#com.intellij.execution.impl.EditConfigurationsDialog/72.0.1848.1080/-1858.0.1858.1080@72.0.1848.1080" timestamp="1589695895008" />
+    <state x="730" y="303" key="EnvironmentVariablesDialog" timestamp="1589695093157">
+      <screen x="72" y="0" width="1848" height="1080" />
+    </state>
+    <state x="730" y="303" key="EnvironmentVariablesDialog/72.0.1848.1080/-1858.0.1858.1080@72.0.1848.1080" timestamp="1589695093157" />
+    <state x="775" y="295" key="FileChooserDialogImpl" timestamp="1589695892349">
+      <screen x="72" y="0" width="1848" height="1080" />
+    </state>
+    <state x="775" y="295" key="FileChooserDialogImpl/72.0.1848.1080/-1858.0.1858.1080@72.0.1848.1080" timestamp="1589695892349" />
+    <state width="1827" height="132" key="GridCell.Tab.0.bottom" timestamp="1589695995959">
+      <screen x="72" y="0" width="1848" height="1080" />
+    </state>
+    <state width="1827" height="132" key="GridCell.Tab.0.bottom/72.0.1848.1080/-1858.0.1858.1080@72.0.1848.1080" timestamp="1589695995959" />
+    <state width="1827" height="132" key="GridCell.Tab.0.center" timestamp="1589695995959">
+      <screen x="72" y="0" width="1848" height="1080" />
+    </state>
+    <state width="1827" height="132" key="GridCell.Tab.0.center/72.0.1848.1080/-1858.0.1858.1080@72.0.1848.1080" timestamp="1589695995959" />
+    <state width="1827" height="132" key="GridCell.Tab.0.left" timestamp="1589695995959">
+      <screen x="72" y="0" width="1848" height="1080" />
+    </state>
+    <state width="1827" height="132" key="GridCell.Tab.0.left/72.0.1848.1080/-1858.0.1858.1080@72.0.1848.1080" timestamp="1589695995959" />
+    <state width="1827" height="132" key="GridCell.Tab.0.right" timestamp="1589695995959">
+      <screen x="72" y="0" width="1848" height="1080" />
+    </state>
+    <state width="1827" height="132" key="GridCell.Tab.0.right/72.0.1848.1080/-1858.0.1858.1080@72.0.1848.1080" timestamp="1589695995959" />
+    <state x="497" y="183" key="SettingsEditor" timestamp="1589697193697">
+      <screen x="72" y="0" width="1848" height="1080" />
+    </state>
+    <state x="497" y="183" key="SettingsEditor/72.0.1848.1080/-1858.0.1858.1080@72.0.1848.1080" timestamp="1589697193697" />
+    <state x="692" y="365" key="com.intellij.ide.util.TipDialog" timestamp="1589697364385">
+      <screen x="72" y="0" width="1848" height="1080" />
+    </state>
+    <state x="692" y="365" key="com.intellij.ide.util.TipDialog/72.0.1848.1080/-1858.0.1858.1080@72.0.1848.1080" timestamp="1589697364385" />
+  </component>
+</project>
