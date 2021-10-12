@@ -24,6 +24,7 @@ from ModelConcChanges import ModelConcChanges
 from ModelOriginal import ModelOriginal
 from ModelDunConcVar import ModelDunConcVar
 from ModelMapChangesConcVar import ModelMapChangesConcVar
+from ModelTest import ModelTest
 from FileHandling import ParamCSVFile
 from test import test
 
@@ -657,8 +658,8 @@ def avgRegressionSlope(hrs, group, sigma, dur, delay, noise):
 # parameters
 dur = 5*60 # seconds
 gap = 15*60 # seconds
-sigma = 0.5
-# sigma = 0
+# sigma = 0.5
+sigma = 0
 delay = 2 # hrs
 hrs = 8 # hrs
 dt = 0.05 # seconds (timestep)
@@ -666,8 +667,8 @@ dt = 0.05 # seconds (timestep)
 X0 = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 0]
 #IC_conc_var = [F_R, F_Roff, F_S, F_W, C_R, C_Rf, C_Roff, C_S, C_W, stp, h, zeta_Ron, zeta_Roff, zeta_S, zeta_W, delta, omega, sigma]
 IC_conc_var = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0]
-group = 'Ron'
-noise = True
+group = 'Roff'
+noise = False
 refractory_activation = True
 
 div = 10
@@ -695,10 +696,14 @@ for _, _, files in os.walk('.', topdown=False):
 
 if sigma > 0:
     print(f"OPTO STIM ENABLED - Group: {group}")
-if refractory_activation:
-    refract_dur = dur / 2
-    refract_gap = gap / 3
-    print('Applying optogenetic activation at refractory periods')
+    if refractory_activation:
+        refract_dur = dur / 2
+        refract_gap = gap / 3
+        print('Applying optogenetic activation at refractory periods')
+else:
+    print("NO OPTO STIM")
+
+# %%
 
 # # create model objects, simulate data and hypnograms
 
@@ -724,10 +729,10 @@ if refractory_activation:
 ##### STANDARD MODEL #####
 
 mMCCV = ModelMapChangesConcVar(IC_conc_var, dt)
-mMCCV.g_Roff2R = -7.0
-mMCCV.g_R2Roff = -5.0
-mMCCV.tau_stpdown = 1650
-mMCCV.tau_stpup = 1650
+# mMCCV.g_Roff2R = -7.0
+# mMCCV.g_R2Roff = -5.0
+# mMCCV.tau_stpdown = 1650
+# mMCCV.tau_stpup = 1650
 
 # mMCCV.run_mi_model(8, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
 # mMCCV.hypnogram(p=1)
@@ -735,21 +740,29 @@ mMCCV.tau_stpup = 1650
 # # mMCCV.avg_Ron_and_Roff_by_state()
 # _,_,_ = mMCCV.inter_REM(p=1, nremOnly=False, log=False)
 
-mMCCV.g_W2Roff = 5.0
-mMCCV.run_mi_model(80 + 2, group=group, sigma=sigma, dur=dur, delay=delay, gap=gap, noise=noise, refractory_activation=False)
+# mMCCV.g_W2Roff = 5.0
+mMCCV.run_mi_model(24 + 2, group=group, sigma=sigma, dur=dur, delay=delay, gap=gap, noise=noise, refractory_activation=False)
 mMCCV.hypnogram_fig1(p=1, save=False)
 # mMCCV.hypnogram_fig1(p=1, p_zoom=1, save=True, filename='fig3_optoHypno')
-# sCV = score_model(mMCCV, pr=1, p=1)
+sCV = score_model(mMCCV, pr=1, p=1)
 # ron_rem, ron_wake, ron_nrem, roff_rem, roff_wake, roff_nrem = mMCCV.avg_Ron_and_Roff_by_state()
-# _,_,_ = mMCCV.inter_REM(p=1, nremOnly=True, log=True)
+_,_,_ = mMCCV.inter_REM(p=1, nremOnly=True, log=True)
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM()
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM_norm()
 # mMCCV.avg_Ron_Roff_seq_REM_norm_REM_pre_grad(bin_size=40)
 # wake_chunks, nrem_chunks = mMCCV.weber_fig_5b(num_chunks=4, save_fig=True)
 # mMCCV.hysteresis_loop(save_fig=True)
-laser_df = mMCCV.laser_trig_percents(pre_post=gap, dur=dur, multiple=True, ci=95, group=group, refractory_activation=False, save_fig=False)
+# laser_df = mMCCV.laser_trig_percents(pre_post=gap, dur=dur, multiple=True, ci=95, group=group, refractory_activation=False, save_fig=False)
 
-##### RUN WITH REFRACTORY ACTIVATION #####
+# getting average fW during sleep
+data_W = mMCCV.X[:,3]
+data_H = mMCCV.H
+sleep_inds = np.where(data_H[0] != 1)[0]
+sleep_W = data_W[sleep_inds]
+avg_sleep_W = np.mean(sleep_W)
+print(f'Average fW during sleep: {avg_sleep_W}')
+
+# %% ##### RUN WITH REFRACTORY ACTIVATION #####
 
 mMCCV.run_mi_model(8 + 2, group=group, sigma=sigma, dur=dur, delay=delay, gap=gap, noise=noise, refractory_activation=refractory_activation)
 mMCCV.hypnogram_fig1(p=1, save=False)
@@ -764,7 +777,23 @@ mMCCV.hypnogram_fig1(p=1, save=False)
 # mMCCV.hysteresis_loop(save_fig=True)
 laser_df_refract = mMCCV.laser_trig_percents(pre_post=refract_gap, dur=refract_dur, multiple=True, ci=95, group=group, refractory_activation=refractory_activation, save_fig=True)
 
+# %%
 
+##### Testing New Model Parameters #####
+
+mTest = ModelTest(IC_conc_var, dt)
+mTest.g_Roff2R = -7.0
+mTest.g_R2Roff = -5.0
+mTest.tau_stpdown = 1650
+mTest.tau_stpup = 1650
+mTest.g_W2Roff = 5.0
+
+mTest.run_mi_model(40 + 2, group=group, sigma=sigma, dur=dur, delay=delay, gap=gap, noise=noise, refractory_activation=False)
+mTest.hypnogram_fig1(p=1, save=False)
+# sTest = score_model(mTest, pr=1, p=1)
+# _,_,_ = mTest.inter_REM(p=1, nremOnly=True, log=True)
+# mTest.avg_Ron_and_Roff_by_state()
+laser_df_test = mTest.laser_trig_percents(dur=dur, multiple=True, ci=95, group=group, refractory_activation=False, save_fig=True)
 
 
 # mWeb = ModelWeber(X0, dt)

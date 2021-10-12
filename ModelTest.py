@@ -22,7 +22,7 @@ import sleepy
 FONT_SIZE=14
 
 
-class ModelMapChangesConcVar():
+class ModelTest():
     """Object for Flip-Flop Model with architectural changes implemented to F_W -> stp inhibition (stp constant during wake, removal of inhibition)
     """
     # Parameters
@@ -65,21 +65,21 @@ class ModelMapChangesConcVar():
     theta_R = 1.5 # 1.5
     theta_W = 1.5 # 1.5
 
-    tau_stpup = 1650.0  # 400.0, 1000.0
-    tau_stpdown = 1650.0  # 400.0, 1000.0
+    tau_stpup = 1000.0  # 400.0, 1000.0
+    tau_stpdown = 1000.0  # 400.0, 1000.0
     tau_hup = 600.0 # 600.0
     tau_hdown = 2000.0 # 2000.0
     tau_omega = 20.0  # 10.0, 20.0
     tau_stim = 5.0  # 10.0, 5.0
 
-    g_Roff2R = -7.0  # -2.0
+    g_Roff2R = -2.0  # -2.0
     g_R2Roff = -5.0 #-5.0
     g_S2W = -2.0 #-2.0
     g_W2S = -2.0 # -2.0
     g_W2R = 0.0 # 0.0
     g_R2W = 0.0 # 0.0
-    g_W2Roff = 5.0 # 0
-    g_Roff2W = 0 # 0
+    g_W2Roff = 0 # 0
+    g_Roff2W = -0.1 # 0
     g_Roff2S = 0 # 0
 
     tau_CR = 10.0 # 10.0
@@ -340,14 +340,9 @@ class ModelMapChangesConcVar():
             if noise:
                 #delta updates
                 omega = simX[i-1, -2]
-
-                # binomial delta
                 p_stim = 1 - np.exp(-omega * self.dt)
                 p = np.random.binomial(1, p_stim)
 
-                # # poisson delta
-                # p = np.random.poisson(lam = omega * self.dt)
-                
                 if p > 0:
                     # print "motor noise"
                     simX[i, -3] += self.delta_update  # 10, 3
@@ -1003,7 +998,7 @@ class ModelMapChangesConcVar():
             # plt.text(max(REM_durations) - 25, m * max(REM_durations) + (b + 50), f'R^2: {round(r**2, 2)}', fontsize = 12)
             sns.despine()
             if save:
-                plt.savefig('figures/fig1_remPre.pdf', bbox_inches = "tight", dpi = 100)
+                plt.savefig('figures/fig1_remPre_test.pdf', bbox_inches = "tight", dpi = 100)
             plt.show()
 
             print(f'Regression Line: Inter = {np.round(m, 2)}(REM_pre) + {np.round(b, 2)}')
@@ -1042,7 +1037,7 @@ class ModelMapChangesConcVar():
             # plt.ylabel('')
             sns.despine()
             if save:
-                plt.savefig('figures/fig1_remPreLog.pdf', bbox_inches = "tight", dpi = 100)
+                plt.savefig('figures/fig1_remPreLog_test.pdf', bbox_inches = "tight", dpi = 100)
             plt.show()
 
         #plot data as above but with axes matching control dataset for better comparison
@@ -2433,9 +2428,9 @@ class ModelMapChangesConcVar():
 
         if save_fig:
             if refractory_activation:
-                plt.savefig('figures/fig3_laserTrigPercents_refractory.pdf', bbox_inches = "tight", dpi = 100)
+                plt.savefig('figures/fig3_laserTrigPercents_refractory_test.pdf', bbox_inches = "tight", dpi = 100)
             else:
-                plt.savefig('figures/fig3_laserTrigPercents_%s.pdf' % group, bbox_inches = "tight", dpi = 100)
+                plt.savefig('figures/fig3_laserTrigPercents_%s_test.pdf' % group, bbox_inches = "tight", dpi = 100)
 
         plt.show()
 
