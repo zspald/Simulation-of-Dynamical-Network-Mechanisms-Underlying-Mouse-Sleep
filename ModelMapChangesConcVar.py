@@ -81,6 +81,7 @@ class ModelMapChangesConcVar():
     g_W2Roff = 5.0 # 0
     g_Roff2W = 0 # 0
     g_Roff2S = 0 # 0
+    g_W2stp = 1
 
     tau_CR = 10.0 # 10.0
     tau_CRf = 1.0 # 1.0
@@ -218,8 +219,8 @@ class ModelMapChangesConcVar():
 
             # homeostatic REM pressure
             if F_W > self.theta_W:
-                # dstp = (stp_r - stp) / tau_stpW # stp decreases during wake
-                dstp = 0 # stp constant during wake
+                dstp = self.g_W2stp * (self.stp_r - stp) / self.tau_stpW # stp decreases during wake
+                # dstp = 0 # stp constant during wake
             else:
                 dstp = (H(self.theta_R - F_R) * (self.stp_max - stp)) / self.tau_stpup + \
                     (H(F_R - self.theta_R) * (self.stp_min - stp)) / self.tau_stpdown
@@ -519,12 +520,12 @@ class ModelMapChangesConcVar():
             sns.set_style('white')
             axes4 = plt.subplot(414, sharex=axes2)
             # axes4 = plt.axes([0.1, 0.425, 0.8, 0.12])
-            # axes4.plot(t, self.X[:, 9])
-            axes4.plot(t, self.X[:, -1])
+            axes4.plot(t, self.X[:, 9])
+            # axes4.plot(t, self.X[:, -1])
             plt.xlim([t[0], t[-1]])
             plt.xticks(t_ticks, tick_labels)
-            # plt.ylabel('REM \nPressure', rotation=0, ha='right', va='center')
-            plt.ylabel('Opto', rotation=0, ha='right', va='center')
+            plt.ylabel('REM \nPressure', rotation=0, ha='right', va='center')
+            # plt.ylabel('Opto', rotation=0, ha='right', va='center')
             # plt.ylabel('Sleep \nPressure', rotation=0, ha='right', va='center')plt.ylabel('Sleep \nPressure', rotation=0, ha='right', va='center')
             plt.xlabel('Time (hr)')
             sns.despine(ax=axes4)
@@ -907,7 +908,7 @@ class ModelMapChangesConcVar():
         # print(f'Average REM-off activity during Wake is {avg_by_state[4]} +/- {roff_std[1]}')
         # print(f'Average REM-off activity during NREM is {avg_by_state[5]} +/- {roff_std[2]}')
 
-    def inter_REM(self, p=0, zoom_out=0, nremOnly=False, log=False, save=False):
+    def inter_REM(self, p=0, zoom_out=0, nremOnly=False, log=False, save=False, filename='fig1_remPre'):
         """Plots association between REM durations and following inter-REM durations (NREM only)
         """
 
@@ -1003,7 +1004,7 @@ class ModelMapChangesConcVar():
             # plt.text(max(REM_durations) - 25, m * max(REM_durations) + (b + 50), f'R^2: {round(r**2, 2)}', fontsize = 12)
             sns.despine()
             if save:
-                plt.savefig('figures/fig1_remPre.pdf', bbox_inches = "tight", dpi = 100)
+                plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
             plt.show()
 
             print(f'Regression Line: Inter = {np.round(m, 2)}(REM_pre) + {np.round(b, 2)}')
@@ -1042,7 +1043,7 @@ class ModelMapChangesConcVar():
             # plt.ylabel('')
             sns.despine()
             if save:
-                plt.savefig('figures/fig1_remPreLog.pdf', bbox_inches = "tight", dpi = 100)
+                plt.savefig('figures/' + filename + '_log.pdf', bbox_inches = "tight", dpi = 100)
             plt.show()
 
         #plot data as above but with axes matching control dataset for better comparison
