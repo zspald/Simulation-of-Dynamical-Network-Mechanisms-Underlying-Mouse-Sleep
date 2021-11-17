@@ -10,6 +10,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import patches
 from scipy import signal, stats
+import sleepy
 
 
 class ModelDunConcVar():
@@ -27,7 +28,7 @@ class ModelDunConcVar():
     tau_W = 25.0 # 25.0
     tau_S = 10.0 # 10.0
 
-    alpha_Roff = 1.5  # 1.5, 2
+    alpha_Roff = 0.5  # 1.5, 2
     alpha_R = 0.5 # 0.5
     alpha_W = 0.5 # 0.5
     beta_R = -0.5 # -0.5
@@ -47,21 +48,21 @@ class ModelDunConcVar():
     stp_max = 1.2 # 1.2
     stp_min = -0.8 # -0.8
     stp_r = 0.0 # 0.0
-    tau_stpW = 1000.0 # 1000.0
-    h_max = 0.8 # 0.8
-    h_min = 0.0 # 0.0
-    omega_max = 0.1  # 0.02, 0.1
-    omega_min = 0.00 # 0.00
+    tau_stpW = 30.0 # 1000.0
+    h_max = 0.6 # 0.8
+    h_min = 0.2 # 0.0
+    omega_max = 0.01  # 0.02, 0.1
+    omega_min = 0.003 # 0.00
 
     theta_R = 1.5 # 1.5
     theta_W = 1.5 # 1.5
 
-    tau_stpup = 1000.0  # 400.0, 1000.0
-    tau_stpdown = 1000.0  # 400.0, 1000.0
+    tau_stpup = 400.0  # 400.0, 1000.0
+    tau_stpdown = 400.0  # 400.0, 1000.0
     tau_hup = 600.0 # 600.0, 400.0
-    tau_hdown = 2000.0 # 2000.0
-    tau_omega = 20.0  # 10.0, 20.0
-    tau_stim = 5.0  # 10.0, 5.0
+    tau_hdown = 700.0 # 2000.0
+    tau_omega = 5.0  # 10.0, 20.0
+    tau_stim = 10.0  # 10.0, 5.0
 
     g_Roff2R = -2.0  # -2.0
     g_R2Roff = -5.0 #-5.0
@@ -389,7 +390,158 @@ class ModelDunConcVar():
             plt.ylabel('Sigma')
 
             plt.show()
-        
+
+    def hypnogram_fig1(self, p=0, p_zoom=0, save=False, filename='fig1_dun_hypno'):
+        """Converts simulated neuron data from a simulation of the MI model to an array of sleep states over time (to be plotted as a hypnogram)
+        Plotting is modified here, in comparison to the regular hypnogram function, to show the desired aspects for fig 1
+
+        Keyword Arguments:
+            p {int} -- plots hypnogram and corresponding sleep data if equal to 1 (default: {0})
+
+        Returns:
+            None - updates hypnogram (H) of model object
+        """
+        R = self.X[:, 0]
+        W = self.X[:, 3]
+        simH = np.zeros((1, len(R)))
+
+        idx_r = np.where(R > self.theta_R)[0]
+        idx_w = np.where(W > self.theta_W)[0]
+        simH[0, :] = 3
+        simH[0, idx_r] = 1
+        simH[0, idx_w] = 2
+
+        #cut off first 2 hours of sleep to visualize model in its stable regime
+        start = int(2 * 3600 / self.dt)
+        simH = np.expand_dims(simH[0, start:], axis=0)
+        self.X = self.X[start:, :]
+        self.H = simH
+
+        # make plot
+        if p == 1:
+            plt.figure()
+            axes1 = plt.subplot(411)
+            # axes1 = plt.axes([0.1, 1.0, 0.8, 0.125])
+            plt.imshow(simH)
+            plt.axis('tight')
+            cmap = plt.cm.jet
+            my_map = cmap.from_list(
+                'brstate', [[0, 1, 1], [1, 0, 1], [0.8, 0.8, 0.8]], 3)
+            tmp = axes1.imshow(simH)
+            tmp.set_cmap(my_map)
+            axes1.axis('tight')
+            axes1.get_xaxis().set_visible(False)
+            axes1.get_yaxis().set_visible(False)
+            if p_zoom == 1:
+                start_zoom = int(0.5*self.X.shape[0])
+                end_zoom = int(0.6*self.X.shape[0])
+                plt.axvline(start_zoom, color='k', linestyle='--')
+                plt.axvline(end_zoom, color='k', linestyle='--')
+                plt.axhline(-0.02, start_zoom, end_zoom, color='k', linestyle='--')
+                plt.axhline(0.02, start_zoom, end_zoom, color='k', linestyle='--')
+
+            t = np.arange(0, self.X.shape[0]*self.dt, self.dt)
+            t_ticks = np.linspace(t[0], t[-1], 7)
+            tick_labels = t_ticks / 3600
+            tick_labels = np.around(tick_labels, 2)
+            empty_labels = ['','','','','','','']
+            
+            sns.set_context('paper')
+            sns.set_style('white')
+            axes2 = plt.subplot(412)
+            # axes2 = plt.axes([0.1, 0.825, 0.8, 0.12])
+            axes2.plot(t, self.X[:, 0])
+            plt.setp(axes2.get_xticklabels(), visible=False)
+            plt.ylabel('REM-On \nFiring Rate \n(Hz)', rotation=0, ha='right', va='center')
+            # plt.ylabel('Sleep \nFiring Rate \n(Hz)', rotation=0, ha='right', va='center')
+            sns.despine(ax=axes2)
+            
+            sns.set_context('paper')
+            sns.set_style('white')
+            axes3 = plt.subplot(413, sharex=axes2)
+            # axes3 = plt.axes([0.1, 0.625, 0.8, 0.12])
+            axes3.plot(t, self.X[:, 1])
+            plt.setp(axes3.get_xticklabels(), visible=False)
+            plt.ylabel('REM-Off \nFiring Rate \n(Hz)', rotation=0, ha='right', va='center')
+            # plt.ylabel('Wake \nFiring Rate \n(Hz)', rotation=0, ha='right', va='center')
+            sns.despine(ax=axes3)
+
+            sns.set_context('paper')
+            sns.set_style('white')
+            axes4 = plt.subplot(414, sharex=axes2)
+            # axes4 = plt.axes([0.1, 0.425, 0.8, 0.12])
+            axes4.plot(t, self.X[:, 9])
+            # axes4.plot(t, self.X[:, -1])
+            plt.xlim([t[0], t[-1]])
+            plt.xticks(t_ticks, tick_labels)
+            plt.ylabel('REM \nPressure', rotation=0, ha='right', va='center')
+            # plt.ylabel('Opto', rotation=0, ha='right', va='center')
+            # plt.ylabel('Sleep \nPressure', rotation=0, ha='right', va='center')plt.ylabel('Sleep \nPressure', rotation=0, ha='right', va='center')
+            plt.xlabel('Time (hr)')
+            sns.despine(ax=axes4)
+
+            if save:
+                plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
+
+            plt.show()
+
+        if p_zoom == 1:
+            X_zoom = self.X[start_zoom:end_zoom, :]
+
+            H_zoom = np.expand_dims(simH[0, start_zoom:end_zoom], axis=0)
+
+            plt.figure()
+            axes5 = plt.subplot(411)
+            # axes5 = plt.axes([0.1, 1.0, 0.8, 0.125])
+            plt.imshow(H_zoom)
+            plt.axis('tight')
+            cmap = plt.cm.jet
+            tmp = axes5.imshow(H_zoom)
+            tmp.set_cmap(my_map)
+            axes5.axis('tight')
+            axes5.get_xaxis().set_visible(False)
+            axes5.get_yaxis().set_visible(False)
+
+            t = np.arange(0, X_zoom.shape[0]*self.dt, self.dt)
+            t_ticks = np.linspace(t[0], t[-1], 7)
+            tick_labels = t_ticks / 3600
+            tick_labels = np.around(tick_labels, 2)
+            
+            sns.set_context('paper')
+            sns.set_style('white')
+            axes6 = plt.subplot(412, sharex=axes1)
+            # axes6 = plt.axes([0.1, 0.825, 0.8, 0.12])
+            axes6.plot(t, X_zoom[:, 0])
+            plt.setp(axes6.get_xticklabels(), visible=False)
+            # plt.ylabel('REM-On \nFiring Rate \n(Hz)', rotation=0, ha='right', va='center')
+            sns.despine(ax=axes6)
+            
+            sns.set_context('paper')
+            sns.set_style('white')
+            axes7 = plt.subplot(413, sharex=axes1)
+            # axes7 = plt.axes([0.1, 0.625, 0.8, 0.12])
+            axes7.plot(t, X_zoom[:, 1])
+            plt.setp(axes7.get_xticklabels(), visible=False)
+            # plt.ylabel('REM-Off \nFiring Rate \n(Hz)', rotation=0, ha='right', va='center')
+            sns.despine(ax=axes7)
+
+            sns.set_context('paper')
+            sns.set_style('white')
+            axes8 = plt.subplot(414, sharex=axes1)
+            # axes8 = plt.axes([0.1, 0.425, 0.8, 0.12])
+            # axes8.plot(t, X_zoom[:, 9])
+            axes8.plot(t, X_zoom[:, -1])
+            plt.xlim([t[0], t[-1]])
+            plt.xticks(t_ticks, tick_labels)
+            # plt.ylabel('REM \nPressure', rotation=0, ha='right', va='center')
+            plt.xlabel('Time (hr)')
+            sns.despine(ax=axes8)
+
+            if save:
+                plt.savefig('figures/' + filename + '_zoom.pdf', bbox_inches = "tight", dpi = 100)
+
+            plt.show()
+
     def get_state_pcts(self, p=0):
         """Getter method for sleep state percents
 
@@ -772,28 +924,28 @@ class ModelDunConcVar():
         REM_induced_dur = []
         record_time = False
         delay = 0
-        for i in range(1, len(H[0])):
+        for i in range(1, len(self.H[0])):
             #start recording time if REM period ends
-            if H[0][i-1] == 1 and H[0][i] != 1:
+            if self.H[0][i-1] == 1 and self.H[0][i] != 1:
                 record_time = True
             #if time is being recorded, add timestep for each iteration
             if record_time:
                 delay += 0.05
                 #stop recording time and grab data upon laser onset
-                if X[i-1, -1] == 0 and X[i, -1] != 0:
+                if self.X[i-1, -1] == 0 and self.X[i, -1] != 0:
                     record_time = False
                     onset.append(delay)
                     delay = 0
-                    pressure.append(X[i, -5])
-                    if H[0][i] == 1:
+                    pressure.append(self.X[i, -5])
+                    if self.H[0][i] == 1:
                         REM_induced_onset.append(1)
                     else:
                         REM_induced_onset.append(0)
                     REM_in_dur = False
                     for j in range(int(dur / 0.05)):
-                        if (i + j) >= len(H[0]):
+                        if (i + j) >= len(self.H[0]):
                             continue
-                        if H[0][i + j] == 1:
+                        if self.H[0][i + j] == 1:
                             REM_in_dur = True
                     if REM_in_dur:
                         REM_induced_dur.append(1)
@@ -850,11 +1002,11 @@ class ModelDunConcVar():
         period = int(60 / self.dt)
         time_vec = np.linspace(-period*self.dt, (period*self.dt)/2, int(1.5*period + 1))
 
-        for i in range(len(H[0]) - 1):
-            if H[0][i] != 1 and H[0][i+1] == 1:
-                if i - period < 0 or (i + (period/2) + 1) > len(H[0]):
+        for i in range(len(self.H[0]) - 1):
+            if self.H[0][i] != 1 and self.H[0][i+1] == 1:
+                if i - period < 0 or (i + (period/2) + 1) > len(self.H[0]):
                     continue
-                pre_REM.append(X[i - period: i + int(period/2) + 1, 1])
+                pre_REM.append(self.X[i - period: i + int(period/2) + 1, 1])
 
         Roff_avg_FRs = []
         for i in range(len(pre_REM[0])):
@@ -885,9 +1037,9 @@ class ModelDunConcVar():
             return 0
 
         ma_counter = 0
-        for i in range(len(H[0]) - 1):
-            if H[0][i] == 2:
-                ma_counter += microarousal_count_helper(H, ma_length, self.dt, i)
+        for i in range(len(self.H[0]) - 1):
+            if self.H[0][i] == 2:
+                ma_counter += microarousal_count_helper(self.H, ma_length, self.dt, i)
         return ma_counter
 
     def Roff_FR_inter_REM_norm(self):
@@ -985,29 +1137,29 @@ class ModelDunConcVar():
         rem_periods = []
         curr_inter = []
         curr_rem = []
-        for i in range(1, len(H[0])):
+        for i in range(1, len(self.H[0])):
             #store values for ended REM period and begin recording
-            if H[0][i-1] == 1 and H[0][i] != 1 and record_rem:
+            if self.H[0][i-1] == 1 and self.H[0][i] != 1 and record_rem:
                 record_rem = False
                 rem_periods.append(curr_rem)
                 curr_rem = []
             #stop recording values and save data to list on REM transition
-            elif H[0][i-1] != 1 and H[0][i] == 1 and record_inter:
+            elif self.H[0][i-1] != 1 and self.H[0][i] == 1 and record_inter:
                 record_inter = False
                 inter_rem_periods.append(curr_inter)
                 curr_inter = []
 
             #begin recording desired states on desired transition
-            if H[0][i-1] != 1 and H[0][i] == 1:
+            if self.H[0][i-1] != 1 and self.H[0][i] == 1:
                 record_rem = True
-            elif H[0][i-1] == 1 and H[0][i] != 1:
+            elif self.H[0][i-1] == 1 and self.H[0][i] != 1:
                 record_inter = True
             
             #record REM-off FR for current state
             if record_inter:
-                curr_inter.append(X[i,1])
+                curr_inter.append(self.X[i,1])
             elif record_rem:
-                curr_rem.append(X[i,1])
+                curr_rem.append(self.X[i,1])
 
         #if same amoung of inter-rem and rem recorded, delete last inter-rem recording to preserve
         #rem->inter-rem->rem pattern (keep length of rem_periods longer than inter-rem periods by 1)
@@ -1072,4 +1224,38 @@ class ModelDunConcVar():
 
         return avg_FRs
 
-    
+    def end_of_state_stp_hist(self, state_name, save_fig=False, filename='endOfState_stp_%s_dun'):
+
+        state_map = {'rem': 1, 'wake': 2, 'nrem': 3}
+
+        state_name = state_name.lower()
+
+        # convert state name to number from input state
+        try:
+            state = state_map[state_name]
+        except KeyError:
+            print('State must be rem, wake, or nrem')
+            return
+
+        # get all sequences of that state in the hypnogram
+        state_seqs = sleepy.get_sequences(np.where(self.H[0] == state)[0])
+
+        # save stp value at the end of all of those states
+        stp_vals = np.zeros((len(state_seqs),))
+        for i in range(len(state_seqs)):
+            seq = state_seqs[i]
+            end_of_state_ind = seq[-1]
+            end_of_state_stp = self.X[end_of_state_ind, 9]
+            stp_vals[i] = end_of_state_stp
+
+        # plot stp histogram
+        plt.figure()
+        sns.histplot(stp_vals, color='blue')
+        plt.ylabel('Count', rotation=0, ha='right', va='center')
+        plt.xlabel('stp')
+        plt.title('Stp at the end of %s' % (state_name.upper() if state_name != 'wake' else state_name.title()))
+
+        if save_fig:
+            plt.savefig('figures/' + (filename % state_name) + '.pdf', bbox_inches = "tight", dpi = 100)
+
+        return stp_vals

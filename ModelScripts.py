@@ -708,7 +708,7 @@ if noise:
 else:
     print("NOISE OFF")
 
-# %%
+# %% ###################### BEGINNING OF MODEL TESTING ###################
 
 # # create model objects, simulate data and hypnograms
 
@@ -738,7 +738,8 @@ mMCCV = ModelMapChangesConcVar(IC_conc_var, dt)
 # mMCCV.g_R2Roff = -5.0
 # mMCCV.tau_stpdown = 1650
 # mMCCV.tau_stpup = 1650
-mMCCV.g_W2stp = 0.2
+# mMCCV.g_W2Roff = 0
+mMCCV.g_W2stp = 0.15
 
 # mMCCV.run_mi_model(8, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
 # mMCCV.hypnogram(p=1)
@@ -746,13 +747,14 @@ mMCCV.g_W2stp = 0.2
 # # mMCCV.avg_Ron_and_Roff_by_state()
 # _,_,_ = mMCCV.inter_REM(p=1, nremOnly=False, log=False)
 
-# mMCCV.g_W2Roff = 5.0
 mMCCV.run_mi_model(80 + 2, group=group, sigma=sigma, dur=dur, delay=delay, gap=gap, noise=noise, refractory_activation=False)
-mMCCV.hypnogram_fig1(p=1, save=True, filename='fig1_hypno_%.1f_w2stp' % mMCCV.g_W2stp)
+mMCCV.hypnogram_fig1(p=1, save=False, filename='fig1_hypno_%.1f_w2stp' % mMCCV.g_W2stp)
 # mMCCV.hypnogram_fig1(p=1, p_zoom=1, save=True, filename='fig3_optoHypno')
 sCV = score_model(mMCCV, pr=1, p=1)
 # ron_rem, ron_wake, ron_nrem, roff_rem, roff_wake, roff_nrem = mMCCV.avg_Ron_and_Roff_by_state()
-_,_,_ = mMCCV.inter_REM(p=1, nremOnly=True, log=True, save=True, filename='fig1_remPre_%.1f_w2stp' % mMCCV.g_W2stp)
+_,_,_ = mMCCV.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, save=True, filename='fig1_remPre_%.1f_w2stp_%.1f_w2Roff' % (mMCCV.g_W2stp, mMCCV.g_W2Roff))
+# stp_hist = mMCCV.end_of_state_stp_hist('rem', save_fig=True)
+# stp_hist_nrem = mMCCV.stp_nrem_after_rem(save_fig=True)
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM()
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM_norm()
 # mMCCV.avg_Ron_Roff_seq_REM_norm_REM_pre_grad(bin_size=40)
@@ -801,6 +803,17 @@ mTest.hypnogram_fig1(p=1, save=False)
 # mTest.avg_Ron_and_Roff_by_state()
 laser_df_test = mTest.laser_trig_percents(dur=dur, multiple=True, ci=95, group=group, refractory_activation=False, save_fig=True)
 
+
+# %% ################ Dunmyre Model #####################
+
+mConcVar = ModelDunConcVar(IC_conc_var, dt)
+mConcVar.run_mi_model(24 + 2, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
+# mConcVar.hypnogram(p=1)
+mConcVar.hypnogram_fig1(p=1, save=False)
+s10 = score_model(mConcVar, pr=1, p=1)
+# mConcVar.avg_Ron_and_Roff_by_state()
+# mConcVar.inter_REM(p=1, nremOnly=True, log=True)
+stp_hist = mConcVar.end_of_state_stp_hist('rem', save_fig=True)
 
 # mWeb = ModelWeber(X0, dt)
 # mWeb.g_Roff2R = -4.0

@@ -908,7 +908,7 @@ class ModelMapChangesConcVar():
         # print(f'Average REM-off activity during Wake is {avg_by_state[4]} +/- {roff_std[1]}')
         # print(f'Average REM-off activity during NREM is {avg_by_state[5]} +/- {roff_std[2]}')
 
-    def inter_REM(self, p=0, zoom_out=0, nremOnly=False, log=False, save=False, filename='fig1_remPre'):
+    def inter_REM(self, seq_thresh=100, p=0, zoom_out=0, nremOnly=False, log=False, save=False, filename='fig1_remPre'):
         """Plots association between REM durations and following inter-REM durations (NREM only)
         """
 
@@ -966,7 +966,6 @@ class ModelMapChangesConcVar():
         inter_durations = np.array(inter_durations)
 
         #separate by sequential and non-sequential
-        seq_thresh = 100
         seq_rem = REM_durations[inter_durations < seq_thresh]
         nonseq_rem = REM_durations[inter_durations >= seq_thresh]
         seq_inter = inter_durations[inter_durations < seq_thresh]
@@ -1024,11 +1023,18 @@ class ModelMapChangesConcVar():
 
             # print(f'Regression Line: Inter = {np.round(logM, 2)}(REM_pre) + {np.round(logB, 2)}')
 
-            plt.figure()
-            sns.histplot(log_nonseq_inter, bins=15, color='blue')
-            sns.histplot(log_seq_inter, bins=30, color='gray')
-            plt.ylabel('Count', rotation=0, ha='right', va='center')
-            plt.xlabel('Log(|NREM|)')
+            _, (ax1, ax2) = plt.subplots(1,2)
+
+            sns.histplot(REM_durations, bins=30, ax=ax1)
+            ax1.set_ylabel('Count', rotation=0, ha='right', va='center')
+            ax1.set_xlabel('REM_pre (s)')
+            ax1.set_title('Distribution of REM_pre Length')
+
+            sns.histplot(log_nonseq_inter, bins=15, color='blue', ax=ax2)
+            sns.histplot(log_seq_inter, bins=30, color='gray', ax=ax2)
+            ax2.set_ylabel('Count', rotation=0, ha='right', va='center')
+            ax2.set_xlabel('Log(|NREM|)')
+            ax2.set_title('Log Distribution of |NREM| Length')
             # mu1_h, sd1_h, w1_h = means_hat[0], sds_hat[0], weights_hat[0]
             # x1 = np.linspace(mu1_h-3*sd1_h, mu1_h+3*sd1_h, 1000)
             # plt.plot(w1_h*stats.norm.pdf(x1, mu1_h, sd1_h), x1)
@@ -1061,8 +1067,7 @@ class ModelMapChangesConcVar():
 
         #get all inter-REM period lengths for sequential REM periods (inter-REM < 100 seconds), 
         #the number of inter-REM periods under 100s corresponds to the number of seq REM periods
-        inter_thresh = 100
-        seqs = inter_durations[np.where(inter_durations <= inter_thresh)]
+        seqs = inter_durations[np.where(inter_durations <= seq_thresh)]
 
         #calculate percentage of sequential and single REM periods
         perc_seq = (len(seqs) / len(inter_durations))*100
@@ -1123,28 +1128,28 @@ class ModelMapChangesConcVar():
         REM_induced_dur = []
         record_time = False
         delay = 0
-        for i in range(1, len(H[0])):
+        for i in range(1, len(self.H[0])):
             #start recording time if REM period ends
-            if H[0][i-1] == 1 and H[0][i] != 1:
+            if self.H[0][i-1] == 1 and self.H[0][i] != 1:
                 record_time = True
             #if time is being recorded, add timestep for each iteration
             if record_time:
                 delay += 0.05
                 #stop recording time and grab data upon laser onset
-                if X[i-1, -1] == 0 and X[i, -1] != 0:
+                if self.X[i-1, -1] == 0 and self.X[i, -1] != 0:
                     record_time = False
                     onset.append(delay)
                     delay = 0
-                    pressure.append(X[i, -5])
-                    if H[0][i] == 1:
+                    pressure.append(self.X[i, -5])
+                    if self.H[0][i] == 1:
                         REM_induced_onset.append(1)
                     else:
                         REM_induced_onset.append(0)
                     REM_in_dur = False
                     for j in range(int(dur / 0.05)):
-                        if (i + j) >= len(H[0]):
+                        if (i + j) >= len(self.H[0]):
                             continue
-                        if H[0][i + j] == 1:
+                        if self.H[0][i + j] == 1:
                             REM_in_dur = True
                     if REM_in_dur:
                         REM_induced_dur.append(1)
@@ -1201,11 +1206,11 @@ class ModelMapChangesConcVar():
         period = int(60 / self.dt)
         time_vec = np.linspace(-period*self.dt, (period*self.dt)/2, int(1.5*period + 1))
 
-        for i in range(len(H[0]) - 1):
-            if H[0][i] != 1 and H[0][i+1] == 1:
-                if i - period < 0 or (i + (period/2) + 1) > len(H[0]):
+        for i in range(len(self.H[0]) - 1):
+            if self.H[0][i] != 1 and self.H[0][i+1] == 1:
+                if i - period < 0 or (i + (period/2) + 1) > len(self.H[0]):
                     continue
-                pre_REM.append(X[i - period: i + int(period/2) + 1, 1])
+                pre_REM.append(self.X[i - period: i + int(period/2) + 1, 1])
 
         Roff_avg_FRs = []
         for i in range(len(pre_REM[0])):
@@ -1236,9 +1241,9 @@ class ModelMapChangesConcVar():
             return 0
 
         ma_counter = 0
-        for i in range(len(H[0]) - 1):
-            if H[0][i] == 2:
-                ma_counter += microarousal_count_helper(H, ma_length, self.dt, i)
+        for i in range(len(self.H[0]) - 1):
+            if self.H[0][i] == 2:
+                ma_counter += microarousal_count_helper(self.H, ma_length, self.dt, i)
         return ma_counter
 
     def Roff_FR_inter_REM_norm(self):
@@ -1255,29 +1260,29 @@ class ModelMapChangesConcVar():
         rem_periods = []
         curr_inter = []
         curr_rem = []
-        for i in range(1, len(H[0])):
+        for i in range(1, len(self.H[0])):
             #store values for ended REM period and begin recording
-            if H[0][i-1] == 1 and H[0][i] != 1 and record_rem:
+            if self.H[0][i-1] == 1 and self.H[0][i] != 1 and record_rem:
                 record_rem = False
                 rem_periods.append(curr_rem)
                 curr_rem = []
             #stop recording values and save data to list on REM transition
-            elif H[0][i-1] != 1 and H[0][i] == 1 and record_inter:
+            elif self.H[0][i-1] != 1 and self.H[0][i] == 1 and record_inter:
                 record_inter = False
                 inter_rem_periods.append(curr_inter)
                 curr_inter = []
 
             #begin recording desired states on desired transition
-            if H[0][i-1] != 1 and H[0][i] == 1:
+            if self.H[0][i-1] != 1 and self.H[0][i] == 1:
                 record_rem = True
-            elif H[0][i-1] == 1 and H[0][i] != 1:
+            elif self.H[0][i-1] == 1 and self.H[0][i] != 1:
                 record_inter = True
             
             #record REM-off FR for current state
             if record_inter:
-                curr_inter.append(X[i,1])
+                curr_inter.append(self.X[i,1])
             elif record_rem:
-                curr_rem.append(X[i,1])
+                curr_rem.append(self.X[i,1])
 
         #if same amoung of inter-rem and rem recorded, delete last inter-rem recording to preserve
         #rem->inter-rem->rem pattern (keep length of rem_periods longer than inter-rem periods by 1)
@@ -1298,7 +1303,7 @@ class ModelMapChangesConcVar():
         norm_FRs_rem = []
         for entry in rem_periods:
             to_np = np.array(entry)
-            norm_FRs_rem.append(time_morph(to_np, nstates_rem))
+            norm_FRs_rem.append(self.time_morph(to_np, nstates_rem))
         norm_FRs_rem = np.array(norm_FRs_rem)
 
         #combine rem and inter-REM into single slice of FR data
@@ -1421,9 +1426,9 @@ class ModelMapChangesConcVar():
         #check nrem times before and after each rem period: first of sequential episodes will have
         #a time in nrem > 100s prior to rem period and time <= 100s after REM period
         for seq in remSeqs:
-            if (nrem_before(self, seq[0])) > 100 and (nrem_after(self, seq[-1])) <= 100:
+            if (self.nrem_before(self, seq[0])) > 100 and (self.nrem_after(self, seq[-1])) <= 100:
                 firstDurs.append(len(seq) * self.dt)
-            elif (nrem_before(self, seq[0])) > 100 and (nrem_after(self, seq[-1]) > 100):
+            elif (self.nrem_before(self, seq[0])) > 100 and (self.nrem_after(self, seq[-1]) > 100):
                 singleDurs.append(len(seq) * self.dt)
 
         avgFirstOfSeq = np.average(firstDurs)
@@ -2628,7 +2633,67 @@ class ModelMapChangesConcVar():
 
         plt.show()
     
-    
+    def end_of_state_stp_hist(self, state_name, save_fig=False, filename='endOfState_stp_%s'):
+
+        state_map = {'rem': 1, 'wake': 2, 'nrem': 3}
+
+        state_name = state_name.lower()
+
+        # convert state name to number from input state
+        try:
+            state = state_map[state_name]
+        except KeyError:
+            print('State must be rem, wake, or nrem')
+            return
+
+        # get all sequences of that state in the hypnogram
+        state_seqs = sleepy.get_sequences(np.where(self.H[0] == state)[0])
+
+        # save stp value at the end of all of those states
+        stp_vals = np.zeros((len(state_seqs),))
+        for i in range(len(state_seqs)):
+            seq = state_seqs[i]
+            end_of_state_ind = seq[-1]
+            end_of_state_stp = self.X[end_of_state_ind, 9]
+            stp_vals[i] = end_of_state_stp
+
+        # plot stp histogram
+        plt.figure()
+        sns.histplot(stp_vals, color='blue')
+        plt.ylabel('Count', rotation=0, ha='right', va='center')
+        plt.xlabel('stp')
+        plt.title('Stp at the end of %s' % (state_name.upper() if state_name != 'wake' else state_name.title()))
+
+        if save_fig:
+            plt.savefig('figures/' + (filename % state_name) + '.pdf', bbox_inches = "tight", dpi = 100)
+
+        return stp_vals
+
+    def stp_nrem_after_rem(self, save_fig=False, filename='stp_nrem_after_rem'):
+
+        nrem_seqs = sleepy.get_sequences(np.where(self.H[0] == 3)[0])
+
+        stp_nrem_to_rem = []
+        for seq in nrem_seqs:
+            first = seq[0]
+            if (first-1) > 0 and self.H[0][first-1] == 1:
+                stp_nrem_to_rem.append(self.X[first, 9])
+
+        stp_nrem_to_rem = np.array(stp_nrem_to_rem)
+
+        # plot stp histogram
+        plt.figure()
+        sns.histplot(stp_nrem_to_rem, color='blue')
+        plt.ylabel('Count', rotation=0, ha='right', va='center')
+        plt.xlabel('stp')
+        plt.title('Stp at first NREM state after REM')
+
+        if save_fig:
+            plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
+
+        return stp_nrem_to_rem
+
+
     #TODO
     def delta_stp_inter(self):
         #get starting points for inter-REM, divided into sequential and single categories
