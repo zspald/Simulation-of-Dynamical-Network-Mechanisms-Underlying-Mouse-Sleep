@@ -6,6 +6,7 @@ Flip-Flop Model with architectural changes implemented to F_W -> stp inhibition 
 """
 
 import random
+import math
 import matplotlib.pylab as plt
 import numpy as np
 import pandas as pd
@@ -908,7 +909,7 @@ class ModelMapChangesConcVar():
         # print(f'Average REM-off activity during Wake is {avg_by_state[4]} +/- {roff_std[1]}')
         # print(f'Average REM-off activity during NREM is {avg_by_state[5]} +/- {roff_std[2]}')
 
-    def inter_REM(self, seq_thresh=100, p=0, zoom_out=0, nremOnly=False, log=False, save=False, filename='fig1_remPre'):
+    def inter_REM(self, seq_thresh=100, p=0, zoom_out=0, nremOnly=False, log=False, rem_pre_split=False, save=False, filename='fig1_remPre'):
         """Plots association between REM durations and following inter-REM durations (NREM only)
         """
 
@@ -985,85 +986,139 @@ class ModelMapChangesConcVar():
         m, b, r, _, _ = stats.linregress(nonseq_rem, nonseq_inter)
 
         #plot data in scatter plot
-        if p == 1:
-            sns.set(font_scale=1)
+        if not rem_pre_split:
+            if p == 1:
+                sns.set(font_scale=1)
 
-            plt.figure()
-            sns.set_context('paper')
-            sns.set_style('white')
-            plt.scatter(seq_rem, seq_inter, color='gray')
-            plt.scatter(nonseq_rem, nonseq_inter, color='blue')
-            plt.plot(REM_durations, np.multiply(m,REM_durations) + b, color = 'red')
-            plt.xlabel('REM_pre (s)')
-            if nremOnly:
-                plt.ylabel('|NREM| \n(s)', rotation=0, ha='center', va='center', labelpad=20)
-            else:
-                plt.ylabel('Inter-REM Duration (s)')
-            # plt.title('REM Duration vs Inter-REM Duration')
-            # plt.text(max(REM_durations) - 25, m * max(REM_durations) + (b + 50), f'R^2: {round(r**2, 2)}', fontsize = 12)
-            sns.despine()
-            if save:
-                plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
-            plt.show()
+                plt.figure()
+                sns.set_context('paper')
+                sns.set_style('white')
+                plt.scatter(seq_rem, seq_inter, color='gray')
+                plt.scatter(nonseq_rem, nonseq_inter, color='blue')
+                plt.plot(REM_durations, np.multiply(m,REM_durations) + b, color = 'red')
+                plt.xlabel('REM_pre (s)')
+                if nremOnly:
+                    plt.ylabel('|NREM| \n(s)', rotation=0, ha='center', va='center', labelpad=20)
+                else:
+                    plt.ylabel('Inter-REM Duration (s)')
+                # plt.title('REM Duration vs Inter-REM Duration')
+                # plt.text(max(REM_durations) - 25, m * max(REM_durations) + (b + 50), f'R^2: {round(r**2, 2)}', fontsize = 12)
+                sns.despine()
+                if save:
+                    plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
+                plt.show()
 
-            print(f'Regression Line: Inter = {np.round(m, 2)}(REM_pre) + {np.round(b, 2)}')
+                print(f'Regression Line: Inter = {np.round(m, 2)}(REM_pre) + {np.round(b, 2)}')
+            
+            if log and p == 1:
+                # plt.figure()
+                # plt.scatter(REM_durations, log_inter)
+                # plt.plot(REM_durations, np.multiply(logM,REM_durations) + logB, color = 'red')
+                # plt.xlabel('REM Duration (s)')
+                # if nremOnly:
+                #     plt.ylabel('NREM During Inter-REM Duration (s)')
+                # else:
+                #     plt.ylabel('Inter-REM Duration (s)')
+                # plt.title('REM Duration vs Inter-REM Duration')
+                # plt.text(max(REM_durations) - 1, logM * max(REM_durations) + (logB + 1.2), f'R^2: {round(logR**2, 2)}', fontsize = 12)
+                # plt.show()
+
+                # print(f'Regression Line: Inter = {np.round(logM, 2)}(REM_pre) + {np.round(logB, 2)}')
+
+                _, (ax1, ax2) = plt.subplots(1,2)
+
+                sns.histplot(REM_durations, bins=30, ax=ax1)
+                ax1.set_ylabel('Count', rotation=0, ha='right', va='center')
+                ax1.set_xlabel('REM_pre (s)')
+                ax1.set_title('Distribution of REM_pre Length')
+
+                sns.histplot(log_nonseq_inter, bins=15, color='blue', ax=ax2)
+                sns.histplot(log_seq_inter, bins=30, color='gray', ax=ax2)
+                ax2.set_ylabel('Count', rotation=0, ha='right', va='center')
+                ax2.set_xlabel('Log(|NREM|)')
+                ax2.set_title('Log Distribution of |NREM| Length')
+                # mu1_h, sd1_h, w1_h = means_hat[0], sds_hat[0], weights_hat[0]
+                # x1 = np.linspace(mu1_h-3*sd1_h, mu1_h+3*sd1_h, 1000)
+                # plt.plot(w1_h*stats.norm.pdf(x1, mu1_h, sd1_h), x1)
+
+                # mu2_h, sd2_h, w2_h = means_hat[1], sds_hat[1], weights_hat[1]
+                # x2 = np.linspace(mu2_h-3*sd2_h, mu2_h+3*sd2_h, 1000)
+                # plt.plot(w2_h*stats.norm.pdf(x2, mu2_h, sd2_h), x2)
+
+                # mu3_h, sd3_h, w3_h = means_hat[2], sds_hat[2], weights_hat[2]
+                # x3 = np.linspace(mu3_h-3*sd3_h, mu3_h+3*sd3_h, 1000)
+                # plt.plot(w3_h*stats.norm.pdf(x3, mu3_h, sd3_h), x3)
+                # plt.ylabel('')
+                sns.despine()
+                if save:
+                    plt.savefig('figures/' + filename + '_log.pdf', bbox_inches = "tight", dpi = 100)
+                plt.show()
+
+            #plot data as above but with axes matching control dataset for better comparison
+            if zoom_out == 1:
+                plt.figure()
+                plt.scatter(REM_durations, inter_durations)
+                plt.plot(REM_durations, np.multiply(m,REM_durations) + b, color = 'red')
+                plt.xlabel('REM Duration (s)')
+                plt.ylabel('NREM During Inter-REM Duration (s)')
+                plt.title('REM Duration vs Inter-REM Duration - Zoomed Out')
+                plt.text(max(REM_durations) - 25, m * max(REM_durations) + (b + 50), f'R^2: {round(r**2, 2)}', fontsize = 12)
+                plt.xlim([-10, 250])
+                plt.ylim([-10, 2500])
+                plt.show()
         
-        if log and p == 1:
-            # plt.figure()
-            # plt.scatter(REM_durations, log_inter)
-            # plt.plot(REM_durations, np.multiply(logM,REM_durations) + logB, color = 'red')
-            # plt.xlabel('REM Duration (s)')
-            # if nremOnly:
-            #     plt.ylabel('NREM During Inter-REM Duration (s)')
-            # else:
-            #     plt.ylabel('Inter-REM Duration (s)')
-            # plt.title('REM Duration vs Inter-REM Duration')
-            # plt.text(max(REM_durations) - 1, logM * max(REM_durations) + (logB + 1.2), f'R^2: {round(logR**2, 2)}', fontsize = 12)
-            # plt.show()
+        else:
+            rem_bounds = np.arange(0, 181, 30)
+            seq_rem_pre_splits = []
+            nonseq_rem_pre_splits = []
+            seq_inter_splits = []
+            nonseq_inter_splits = []
 
-            # print(f'Regression Line: Inter = {np.round(logM, 2)}(REM_pre) + {np.round(logB, 2)}')
+            for i in range(rem_bounds.shape[0] - 1):
+                range_min = rem_bounds[i]
+                range_max = rem_bounds[i + 1]
 
-            _, (ax1, ax2) = plt.subplots(1,2)
+                temp_seq_rem_pre = seq_rem[np.logical_and(seq_rem >= range_min, seq_rem < range_max)]
+                temp_nonseq_rem_pre = nonseq_rem[np.logical_and(nonseq_rem >= range_min, nonseq_rem < range_max)]
+                temp_seq_inter = seq_inter[np.logical_and(seq_rem >= range_min, seq_rem < range_max)]
+                temp_nonseq_inter = nonseq_inter[np.logical_and(nonseq_rem >= range_min, nonseq_rem < range_max)]
+                
+                seq_rem_pre_splits.append(temp_seq_rem_pre)
+                nonseq_rem_pre_splits.append(temp_nonseq_rem_pre)
+                seq_inter_splits.append(temp_seq_inter)
+                nonseq_inter_splits.append(temp_nonseq_inter)
 
-            sns.histplot(REM_durations, bins=30, ax=ax1)
-            ax1.set_ylabel('Count', rotation=0, ha='right', va='center')
-            ax1.set_xlabel('REM_pre (s)')
-            ax1.set_title('Distribution of REM_pre Length')
+            seq_rem_pre_splits = np.array(seq_rem_pre_splits)
+            nonseq_rem_pre_splits = np.array(nonseq_rem_pre_splits)
+            seq_inter_splits = np.array(seq_inter_splits)
+            nonseq_inter_splits = np.array(nonseq_inter_splits)
 
-            sns.histplot(log_nonseq_inter, bins=15, color='blue', ax=ax2)
-            sns.histplot(log_seq_inter, bins=30, color='gray', ax=ax2)
-            ax2.set_ylabel('Count', rotation=0, ha='right', va='center')
-            ax2.set_xlabel('Log(|NREM|)')
-            ax2.set_title('Log Distribution of |NREM| Length')
-            # mu1_h, sd1_h, w1_h = means_hat[0], sds_hat[0], weights_hat[0]
-            # x1 = np.linspace(mu1_h-3*sd1_h, mu1_h+3*sd1_h, 1000)
-            # plt.plot(w1_h*stats.norm.pdf(x1, mu1_h, sd1_h), x1)
+            if p==1:
+                _, axs = plt.subplots(math.ceil(seq_rem_pre_splits.shape[0] / 3), 3)
+                curr_split = 0
+                # print(seq_inter_splits)
+                # print(nonseq_inter_splits)
+                for row in axs:
+                    for ax in row:
+                        if seq_inter_splits[curr_split].size == 0 or nonseq_inter_splits[curr_split].size == 0:
+                            curr_split += 1
+                            continue
+                        else:
+                            curr_log_seq_split_inter = np.log(seq_inter_splits[curr_split]+1)
+                            curr_log_nonseq_split_inter = np.log(nonseq_inter_splits[curr_split]+1)
+                            sns.histplot(curr_log_nonseq_split_inter[curr_split], color='blue', ax=ax)
+                            sns.histplot(curr_log_seq_split_inter[curr_split], color='gray', ax=ax)
+                            ax.set_ylabel('Count', rotation=0, ha='right', va='center')
+                            ax.set_xlabel('Log(|NREM|)')
+                            ax.set_title('Log Distribution of |NREM| Length for REM_pre %d <= %d' % (rem_bounds[curr_split], rem_bounds[curr_split+1]))
+                            curr_split += 1
+                
+                sns.despine()
+                if save:
+                    plt.savefig('figures/' + filename + '_log_split.pdf', bbox_inches = "tight", dpi = 100)
+                plt.show()
+                    
 
-            # mu2_h, sd2_h, w2_h = means_hat[1], sds_hat[1], weights_hat[1]
-            # x2 = np.linspace(mu2_h-3*sd2_h, mu2_h+3*sd2_h, 1000)
-            # plt.plot(w2_h*stats.norm.pdf(x2, mu2_h, sd2_h), x2)
-
-            # mu3_h, sd3_h, w3_h = means_hat[2], sds_hat[2], weights_hat[2]
-            # x3 = np.linspace(mu3_h-3*sd3_h, mu3_h+3*sd3_h, 1000)
-            # plt.plot(w3_h*stats.norm.pdf(x3, mu3_h, sd3_h), x3)
-            # plt.ylabel('')
-            sns.despine()
-            if save:
-                plt.savefig('figures/' + filename + '_log.pdf', bbox_inches = "tight", dpi = 100)
-            plt.show()
-
-        #plot data as above but with axes matching control dataset for better comparison
-        if zoom_out == 1:
-            plt.figure()
-            plt.scatter(REM_durations, inter_durations)
-            plt.plot(REM_durations, np.multiply(m,REM_durations) + b, color = 'red')
-            plt.xlabel('REM Duration (s)')
-            plt.ylabel('NREM During Inter-REM Duration (s)')
-            plt.title('REM Duration vs Inter-REM Duration')
-            plt.text(max(REM_durations) - 25, m * max(REM_durations) + (b + 50), f'R^2: {round(r**2, 2)}', fontsize = 12)
-            plt.xlim([-10, 250])
-            plt.ylim([-10, 2500])
-            plt.show()
 
         #get all inter-REM period lengths for sequential REM periods (inter-REM < 100 seconds), 
         #the number of inter-REM periods under 100s corresponds to the number of seq REM periods
@@ -2669,29 +2724,72 @@ class ModelMapChangesConcVar():
 
         return stp_vals
 
-    def stp_nrem_after_rem(self, save_fig=False, filename='stp_nrem_after_rem'):
+    def stp_nrem_after_rem(self, p=0, save_fig=False, filename='stp_nrem_after_rem'):
 
+        rem_seqs = sleepy.get_sequences(np.where(self.H[0] == 1)[0])
         nrem_seqs = sleepy.get_sequences(np.where(self.H[0] == 3)[0])
+        
+        # get all non-wake sequences
+        rem_seqs.extend(nrem_seqs)
+        rem_nrem_seqs = sorted(rem_seqs, key=lambda x: x[0])
+        # print(len(rem_nrem_seqs))
 
-        stp_nrem_to_rem = []
-        for seq in nrem_seqs:
-            first = seq[0]
-            if (first-1) > 0 and self.H[0][first-1] == 1:
-                stp_nrem_to_rem.append(self.X[first, 9])
+        # classify each sequence as rem or nrem from hypnogram
+        seq_labels = np.array([self.H[0][seq[0]] for seq in rem_nrem_seqs])
+        # print(seq_labels)
+        
 
-        stp_nrem_to_rem = np.array(stp_nrem_to_rem)
+        # use diff to determine where transitions from rem to nrem occur (avoiding nrem -> wake -> nrem, rem -> wake -> rem)
+        seq_diffs = np.diff(seq_labels)
+        # print(seq_diffs)
 
-        # plot stp histogram
-        plt.figure()
-        sns.histplot(stp_nrem_to_rem, color='blue')
-        plt.ylabel('Count', rotation=0, ha='right', va='center')
-        plt.xlabel('stp')
-        plt.title('Stp at first NREM state after REM')
+        # get stp value of all transition from rem to nrem
+        stp_rem_to_nrem_direct = []
+        stp_rem_to_nrem_indirect = []
+        rem_durs_direct = []
+        rem_durs_indirect = []
+        for i, transition in enumerate(seq_diffs):
+            if transition > 0:
+                nrem_ind = (rem_nrem_seqs[i+1])[0]
+                rem_seq = rem_nrem_seqs[i]
+                
+                # transition from rem directly to nrem
+                if nrem_ind - rem_seq[-1] == 1:
+                    stp_rem_to_nrem_direct.append(self.X[nrem_ind,9])
+                    rem_durs_direct.append(len(rem_seq) * self.dt)
+                # transition from rem to wake to nrem
+                else:
+                    stp_rem_to_nrem_indirect.append(self.X[nrem_ind,9])
+                    rem_durs_indirect.append(len(rem_seq) * self.dt)
 
-        if save_fig:
-            plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
 
-        return stp_nrem_to_rem
+        stp_rem_to_nrem_direct = np.array(stp_rem_to_nrem_direct)
+        stp_rem_to_nrem_indirect = np.array(stp_rem_to_nrem_indirect)
+        rem_durs_direct = np.array(rem_durs_direct)
+        rem_durs_indirect = np.array(rem_durs_indirect)
+        print(f'Direct: {stp_rem_to_nrem_direct.shape, rem_durs_direct.shape}')
+        print(f'Indirect: {stp_rem_to_nrem_indirect.shape, rem_durs_indirect.shape}')
+
+        #plot data in scatter plot
+        if p == 1:
+            sns.set(font_scale=1)
+
+            plt.figure()
+            sns.set_context('paper')
+            sns.set_style('white')
+            plt.scatter(rem_durs_direct, stp_rem_to_nrem_direct, color='blue', label='REM->NREM')
+            plt.scatter(rem_durs_indirect, stp_rem_to_nrem_indirect, color='red', label='REM->Wake->NREM')
+            plt.xlabel('REM_pre (s)')
+            plt.ylabel('STP', rotation=0, ha='center', va='center', labelpad=20)
+            plt.title('STP From First NREM State Following REM')
+            plt.legend()
+            # plt.text(max(REM_durations) - 25, m * max(REM_durations) + (b + 50), f'R^2: {round(r**2, 2)}', fontsize = 12)
+            sns.despine()
+            if save_fig:
+                plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
+            plt.show()
+
+        return rem_nrem_seqs, seq_labels, seq_diffs, stp_rem_to_nrem_direct, stp_rem_to_nrem_indirect
 
 
     #TODO
