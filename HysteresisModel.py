@@ -211,7 +211,8 @@ if psave==1:
 # %% Stable and Unstable Points
 
 # STP = np.arange(-0.8, 1.2, 0.1)
-STP = np.concatenate((np.arange(0.3, .48, 0.01), np.arange(0.48, 0.5, 0.001), np.arange(0.5, 0.79, 0.01), np.arange(0.79,0.8, 0.001), np.arange(0.8, 0.901, 0.01)))
+# STP = np.concatenate((np.arange(0.3, .48, 0.01), np.arange(0.48, 0.5, 0.001), np.arange(0.5, 0.79, 0.01), np.arange(0.79,0.8, 0.001), np.arange(0.8, 0.901, 0.01)))
+STP = np.concatenate((np.arange(0.3, 0.7, 0.01), np.arange(0.7,0.75,0.001), np.arange(0.75,0.9,0.01), np.arange(0.9,0.95,0.001), np.arange(0.95,1.2,0.01)))
 FR_opt = np.zeros((len(STP),))
 FRoff_opt = np.zeros((len(STP),))
 FR = np.arange(0, 5, 0.1)
@@ -267,7 +268,7 @@ for stp in STP:
             plt.plot(stp, fn[i], 'r.')
 
 plt.plot(model_output[:,2], model_output[:,1])    
-plt.xlim((0, 1))
+plt.xlim((min(STP), max(STP)))
 plt.ylim((-0.1, 5.1))
 plt.xlabel('stp')
 plt.ylabel('FR - REM-off')
@@ -286,7 +287,7 @@ for stp in STP:
             plt.plot(stp, fn[i], 'r.')
 
 plt.plot(model_output[:,2], model_output[:,1])    
-plt.xlim((0, 1))
+plt.xlim((min(STP), max(STP)))
 plt.ylim((-0.1, 5.1))
 plt.xlabel('stp')
 plt.ylabel('FR - REM-off')
@@ -306,7 +307,7 @@ for stp in STP:
             plt.plot(stp, fr[i], 'r.')
     
 plt.plot(model_output[:,2], model_output[:,1])
-plt.xlim((0, 1))
+plt.xlim((min(STP), max(STP)))
 plt.ylim((-0.1, 5.1))
 plt.xlabel('stp')
 plt.ylabel('FR - REM-on')
@@ -350,7 +351,7 @@ plt.plot(instab[:,0], instab[:,1], '--', color='gray', lw=3)
 noffset = 600
 plt.plot(model_output[noffset:,2], model_output[noffset:,1], '--', color=[0.6,0.6,1], lw=2)
         
-plt.xlim([0.3, 0.9])    
+plt.xlim([min(STP), max(STP)])    
 plt.ylim([-0.1, 5.1])
 ax.xaxis.set_ticks([0.4, 0.4, 0.6, 0.8])
 ax.yaxis.set_ticks(range(0, 6))
@@ -361,7 +362,7 @@ plt.xlabel('stp')
 # box_off(ax)
 
 if psave == 1:
-    fig_file = os.path.join(out_path, 'fig_bifurcation.pdf')
+    fig_file = os.path.join(out_path, 'fig_bifurcation_fn.pdf')
     plt.savefig(fig_file, bbox_inches="tight"); 
 
 ##################################
@@ -401,10 +402,11 @@ ax = plt.subplot(111)
 plt.plot(stab_low[:,0], stab_low[:,1], color='black', lw=3)
 plt.plot(stab_high[:,0], stab_high[:,1], color='black', lw=3)            
 plt.plot(instab[:,0], instab[:,1], '--', color='gray', lw=3)
+plt.hlines(1.5, min(STP), max(STP), linestyle='--', color='red')
 
-noffset = 600
-plt.plot(model_output[noffset:,2], model_output[noffset:,0], '--', color=[0.6,0.6,1], lw=2)
-plt.plot(model_output[noffset:,2], model_output[noffset:,0], '--', color=[0.6,0.6,1], lw=2)
+# noffset = 600
+# plt.plot(model_output[noffset:,2], model_output[noffset:,0], '--', color=[0.6,0.6,1], lw=2)
+# plt.plot(model_output[noffset:,2], model_output[noffset:,0], '--', color=[0.6,0.6,1], lw=2)
 
         
 s = np.arange(0, 5, .1)
@@ -413,9 +415,9 @@ s = np.arange(0, 5, .1)
 #plt.plot(model_output[it3,2], model_output[it3,0], 'o', color=[1, 0.4, 1], lw=4)
 
 
-plt.xlim([0.3, 0.9])    
+plt.xlim([min(STP), max(STP)])    
 plt.ylim([-0.1, 4.5])
-ax.xaxis.set_ticks([0.4, 0.4, 0.6, 0.8])
+ax.xaxis.set_ticks(np.arange(min(STP),max(STP),))
 ax.yaxis.set_ticks(range(0, 5))
 
 
@@ -424,7 +426,7 @@ plt.xlabel('stp')
 # box_off(ax)
 
 if psave == 1:
-    fig_file = os.path.join(out_path, 'fig_bifurcation2.pdf')
+    fig_file = os.path.join(out_path, 'fig_bifurcation_fr.pdf')
     plt.savefig(fig_file, bbox_inches="tight"); 
 
 

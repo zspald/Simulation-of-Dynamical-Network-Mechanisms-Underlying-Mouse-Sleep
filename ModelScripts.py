@@ -747,19 +747,19 @@ mMCCV.g_W2stp = 0.15
 # # mMCCV.avg_Ron_and_Roff_by_state()
 # _,_,_ = mMCCV.inter_REM(p=1, nremOnly=False, log=False)
 
-mMCCV.run_mi_model(80 + 2, group=group, sigma=sigma, dur=dur, delay=delay, gap=gap, noise=noise, refractory_activation=False)
+mMCCV.run_mi_model(24 + 2, group=group, sigma=sigma, dur=dur, delay=delay, gap=gap, noise=noise, refractory_activation=False)
 mMCCV.hypnogram_fig1(p=1, save=False, filename='fig1_hypno_%.1f_w2stp' % mMCCV.g_W2stp)
 # mMCCV.hypnogram_fig1(p=1, p_zoom=1, save=True, filename='fig3_optoHypno')
 sCV = score_model(mMCCV, pr=1, p=1)
 # ron_rem, ron_wake, ron_nrem, roff_rem, roff_wake, roff_nrem = mMCCV.avg_Ron_and_Roff_by_state()
-_,_,_ = mMCCV.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, save=True, filename='fig1_remPre_%.1f_w2stp_%.1f_w2Roff' % (mMCCV.g_W2stp, mMCCV.g_W2Roff))
+# _,_,_ = mMCCV.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, save=True, filename='fig1_remPre_%.1f_w2stp_%.1f_w2Roff' % (mMCCV.g_W2stp, mMCCV.g_W2Roff))
 # stp_hist = mMCCV.end_of_state_stp_hist('rem', save_fig=True)
 # stp_hist_nrem = mMCCV.stp_nrem_after_rem(save_fig=True)
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM()
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM_norm()
 # mMCCV.avg_Ron_Roff_seq_REM_norm_REM_pre_grad(bin_size=40)
 # wake_chunks, nrem_chunks = mMCCV.weber_fig_5b(num_chunks=4, save_fig=True)
-# mMCCV.hysteresis_loop(save_fig=True)
+mMCCV.hysteresis_loop(save_fig=True)
 # laser_df = mMCCV.laser_trig_percents(pre_post=gap, dur=dur, multiple=True, ci=95, group=group, refractory_activation=False, save_fig=False)
 
 # getting average fW during sleep
