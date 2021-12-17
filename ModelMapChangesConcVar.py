@@ -2624,6 +2624,11 @@ class ModelMapChangesConcVar():
         return wake_fRoff_by_chunk, nrem_fRoff_by_chunk
 
     def hysteresis_loop(self, seq_thresh=150, save_fig=False):
+        # load steady state hysteresis data
+        stab_high = np.load('stab_high_fr.npy', allow_pickle=True)
+        stab_low = np.load('stab_low_fr.npy', allow_pickle=True)
+        instab = np.load('instab_fr.npy', allow_pickle=True)
+
         # extract fRon and stp data
         fRon_data = self.X[:,0]
         stp_data = self.X[:,9]
@@ -2640,6 +2645,7 @@ class ModelMapChangesConcVar():
 
         # stitch together indices of REM->burst inter->REM periods
         burst_inds = []
+        scatter_burst = []
         for i in range(len(interSeqs)):
             temp = []
             if len(interSeqs[i]) * self.dt < seq_thresh:
@@ -2647,6 +2653,9 @@ class ModelMapChangesConcVar():
                 temp.extend(interSeqs[i])
                 temp.extend(remSeqs[i+1])
                 burst_inds.append(temp)
+
+                # append first burst nrem index
+                scatter_burst.append(interSeqs[i][0])
 
         # # identify indices of burst inter-REM periods
         # burst_inds = []
@@ -2664,6 +2673,12 @@ class ModelMapChangesConcVar():
         # burst_fRon_data = fRon_data[burst_inds]
         # burst_stp_data = stp_data[burst_inds]
 
+        scatter_fRon_data = []
+        scatter_stp_data = []
+        for ind in scatter_burst:
+            scatter_fRon_data.append(fRon_data[ind])
+            scatter_stp_data.append(stp_data[ind])
+
         # create colors for sequences
         color = []
         num_lines = 10
@@ -2675,16 +2690,22 @@ class ModelMapChangesConcVar():
 
         plt.figure()
         plt.plot(stp_data, fRon_data, color='b', linewidth=loop_lw, alpha=0.7)
-        for i in range(num_lines):
-        # for i in range(len(burst_fRon_data)):
-            plt.plot(burst_stp_data[i], burst_fRon_data[i], color=color[i], linewidth=loop_lw+0.35)
+        # for i in range(num_lines):
+        # # for i in range(len(burst_fRon_data)):
+        #     plt.plot(burst_stp_data[i], burst_fRon_data[i], color=color[i], linewidth=loop_lw+0.35)
+        
+        plt.scatter(scatter_stp_data, scatter_fRon_data, color='red')
+        plt.plot(stab_low[:,0], stab_low[:,1], color='black', lw=3)
+        plt.plot(stab_high[:,0], stab_high[:,1], color='black', lw=3)            
+        plt.plot(instab[:,0], instab[:,1], '--', color='gray', lw=3)
         plt.axhline(y=self.theta_R, color='k', linestyle='dashed')
         plt.xlabel('stp')
         plt.ylabel('fRon')
+        plt.xlim([0.6, 1.1])
         sns.despine()
 
         if save_fig:
-            plt.savefig('figures/hysteresis_loop.pdf', bbox_inches = "tight", dpi = 100)
+            plt.savefig('figures/hysteresis_loop_scatter.pdf', bbox_inches = "tight", dpi = 100)
 
         plt.show()
     
