@@ -1,8 +1,7 @@
 # Simulation of Dynamical Network Mechanisms Underlying Mouse Sleep (Work in Progress)
 Modification of the mathematical model surrounding the sleep dynamics of mice described in "Coupled Flip-Flop Model for REM Sleep Regulation in the Rat" by accounting for changes in sleep patterns due to optogenetic stimulation of a desired brain region. Code created with the help of Dr. Weber in the Weber Lab at the Perelman School of Medicine at the University of Pennsylvania.
 
-# Abstract
-TODO
+Experimental and computational studies in rodent sleep have sought to understand the synaptic interactions underlying the neuronal regulation of rapid eye movement (REM) sleep. A recent computational model has demonstrated success in recreating rodent sleep state transitions via the coupling of two mutually inhibitory (MI) “flip-flop” models describing synaptic interactions between wake-promoting, non REM (NREM) sleep-promoting, REM sleep-promoting (REM-on), and REM sleep-inhibiting (REM-off) neuronal populations. While current experimental evidence favors models by which the alternation between NREM and REM sleep is governed by MI interactions, it is unclear whether these MI models can account for newly-identified features correlating the duration of a REM sleep period to its following NREM state duration. In this study, we present a modification to the dynamical network of this coupled flip-flop model to address these features.
 
 # Figures
 ![](images/No_Optogenetic_Activation_no_Noise.png)  
