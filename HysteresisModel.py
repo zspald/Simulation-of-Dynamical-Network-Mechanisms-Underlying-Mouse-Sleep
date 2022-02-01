@@ -60,8 +60,8 @@ def mi_const(X, t=0):
     theta_R = 1.5 # 1.5
     theta_W = 1.5 # 1.5
 
-    tau_stpup = 1000.0  # 400.0, 1000.0
-    tau_stpdown = 1000.0  # 400.0, 1000.0
+    tau_stpup = 1650.0  # 400.0, 1000.0
+    tau_stpdown = 1650.0  # 400.0, 1000.0
     tau_hup = 600.0 # 600.0
     tau_hdown = 2000.0 # 2000.0
     tau_omega = 20.0  # 10.0, 20.0
@@ -76,6 +76,7 @@ def mi_const(X, t=0):
     g_W2Roff = 5.0 # 0
     g_Roff2W = 0 # 0
     g_Roff2S = 0 # 0
+    g_W2stp = 0.15 # 0.15
 
     # general function definitions
     X_inf = lambda c, X_max, beta, alpha: (0.5 * X_max * (1 + np.tanh((c-beta) / alpha)))
@@ -125,7 +126,7 @@ def my_unique2d(X, Y, TOL = 0.01):
 
 # %% Run model 
 
-X0 = [0.1, 4.2, AVG_SLEEP_FW, 0.63]
+# X0 = [0.1, 4.2, AVG_SLEEP_FW, 0.63]
 X0 = [3.8, .1, AVG_SLEEP_FW, 0.63]
 
 dt = 0.1
@@ -428,6 +429,12 @@ plt.xlabel('stp')
 if psave == 1:
     fig_file = os.path.join(out_path, 'fig_bifurcation_fr.pdf')
     plt.savefig(fig_file, bbox_inches="tight"); 
+
+# %% Save fron bifurcation data
+
+np.save('stab_high_fr.npy', stab_high)
+np.save('stab_low_fr.npy', stab_low)
+np.save('instab_fr.npy', instab)
 
 
 #%%

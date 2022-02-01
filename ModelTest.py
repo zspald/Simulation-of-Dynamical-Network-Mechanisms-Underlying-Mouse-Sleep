@@ -65,14 +65,14 @@ class ModelTest():
     theta_R = 1.5 # 1.5
     theta_W = 1.5 # 1.5
 
-    tau_stpup = 1000.0  # 400.0, 1000.0
-    tau_stpdown = 1000.0  # 400.0, 1000.0
+    tau_stpup = 1650.0  # 400.0, 1000.0
+    tau_stpdown = 1650.0  # 400.0, 1000.0
     tau_hup = 600.0 # 600.0
     tau_hdown = 2000.0 # 2000.0
     tau_omega = 20.0  # 10.0, 20.0
     tau_stim = 5.0  # 10.0, 5.0
 
-    g_Roff2R = -2.0  # -2.0
+    g_Roff2R = -7.0  # -2.0
     g_R2Roff = -5.0 #-5.0
     g_S2W = -2.0 #-2.0
     g_W2S = -2.0 # -2.0
@@ -81,6 +81,7 @@ class ModelTest():
     g_W2Roff = 0 # 0
     g_Roff2W = -0.1 # 0
     g_Roff2S = 0 # 0
+    g_W2stp = 0.15 # 0.15
 
     tau_CR = 10.0 # 10.0
     tau_CRf = 1.0 # 1.0
@@ -180,8 +181,12 @@ class ModelTest():
                 {numpy array} -- time derivatives of model parameters
             """
 
-            [F_R, F_Roff, F_S, F_W, C_R, C_Rf, C_Roff,
-                C_S, C_W, stp, h, zeta_Ron, zeta_Roff, zeta_S, zeta_W, delta, omega, sigma] = simX
+            # [F_R, F_Roff, F_S, F_W, C_R, C_Rf, C_Roff,
+            # C_S, C_W, stp, h, zeta_Ron, zeta_Roff, zeta_S, 
+            # zeta_W, delta, omega, sigma] = simX
+
+            [F_R, F_Roff, F_S, F_W, stp, h, zeta_Ron, zeta_Roff, zeta_S, 
+            zeta_W, delta, omega, sigma] = simX
 
             #stimulation-group-dependent parameters
             sigma_R = 0
@@ -202,6 +207,19 @@ class ModelTest():
                 0.5 * X_max * (1 + np.tanh((c-beta)/alpha)))
 
             def CX_inf(f, gamma): return np.tanh(f/gamma)
+            # steady state for neurotransmitter concentration:
+            def CR_inf(x): return CX_inf(x, self.gamma_R)
+            def CRoff_inf(x): return CX_inf(x, self.gamma_Roff)
+            # steady state for neurotransmitter concentration:
+            def CW_inf(x): return CX_inf(x, self.gamma_W)
+            # steady state for neurotransmitter concentration:
+            def CS_inf(x): return CX_inf(x, self.gamma_S)
+            C_R = CR_inf(F_R)
+            C_Roff = CRoff_inf(F_Roff)
+            C_W = CW_inf(F_W)
+            C_S = CS_inf(F_S)
+
+
             def beta_X(y, k1_X, k2_X): return k2_X * (y - k1_X)
             # heavyside function
             def H(x): return 1 if x > 0 else 0
@@ -210,16 +228,15 @@ class ModelTest():
             def R_inf(c): return X_inf(c, self.R_max, self.beta_R, self.alpha_R)
             # firing rate of REM (R) population
             dF_R = (R_inf(C_Roff * self.g_Roff2R + C_W * self.g_W2R + sigma_R) - F_R) / self.tau_R
-            # steady state for neurotransmitter concentration:
-            def CR_inf(x): return CX_inf(x, self.gamma_R)
+            
             # dynamics for neurotransmitter
-            dC_R = (zeta_Ron * CR_inf(F_R) - C_R) / self.tau_CR
-            dC_Rf = (CR_inf(F_R) - C_Rf) / self.tau_CRf
+            # dC_R = (zeta_Ron * CR_inf(F_R) - C_R) / self.tau_CR
+            # dC_Rf = (CR_inf(F_R) - C_Rf) / self.tau_CRf
 
             # homeostatic REM pressure
             if F_W > self.theta_W:
-                # dstp = (stp_r - stp) / tau_stpW # stp decreases during wake
-                dstp = 0 # stp constant during wake
+                dstp = self.g_W2stp * (self.stp_r - stp) / self.tau_stpW # stp decreases during wake
+                # dstp = 0 # stp constant during wake
             else:
                 dstp = (H(self.theta_R - F_R) * (self.stp_max - stp)) / self.tau_stpup + \
                     (H(F_R - self.theta_R) * (self.stp_min - stp)) / self.tau_stpdown
@@ -240,18 +257,17 @@ class ModelTest():
             dF_Roff = (Roff_inf(C_R * self.g_R2Roff + C_W * self.g_W2Roff + \
                 self.delta2Roff * delta + sigma_Roff) - F_Roff) / self.tau_Roff
 
-            def CRoff_inf(x): return CX_inf(x, self.gamma_Roff)
-            dC_Roff = (zeta_Roff * CRoff_inf(F_Roff) - C_Roff) / self.tau_CRoff
+            
+            # dC_Roff = (zeta_Roff * CRoff_inf(F_Roff) - C_Roff) / self.tau_CRoff
 
             # Wake population
             def W_inf(c): return X_inf(c, self.W_max, self.beta_W, self.alpha_W)
             # firing rate of REM (R) population
-            dF_W = (W_inf(C_S * self.g_S2W + C_Rf * self.g_R2W +
-                        C_Roff * self.g_Roff2W + self.delta2W * delta + sigma_W) - F_W) / self.tau_W
-            # steady state for neurotransmitter concentration:
-            def CW_inf(x): return CX_inf(x, self.gamma_W)
+            dF_W = (W_inf(C_S * self.g_S2W + C_Roff * self.g_Roff2W + 
+                    self.delta2W * delta + sigma_W) - F_W) / self.tau_W
+            
             # dynamics for neurotransmitter
-            dC_W = (zeta_W * CW_inf(F_W) - C_W) / self.tau_CW
+            # dC_W = (zeta_W * CW_inf(F_W) - C_W) / self.tau_CW
 
             # homeostatic sleep drive
             dh = (H(F_W - self.theta_W) * (self.h_max - h)) / self.tau_hup + \
@@ -262,10 +278,9 @@ class ModelTest():
             def S_inf(c): return X_inf(c, self.S_max, beta_S(h), self.alpha_S)
             # firing rate of REM (R) population
             dF_S = (S_inf(C_W * self.g_W2S + C_Roff * self.g_Roff2S + sigma_S) - F_S) / self.tau_S
-            # steady state for neurotransmitter concentration:
-            def CS_inf(x): return CX_inf(x, self.gamma_S)
+            
             # dynamics for neurotransmitter
-            dC_S = (zeta_S * CS_inf(F_S) - C_S) / self.tau_CS
+            # dC_S = (zeta_S * CS_inf(F_S) - C_S) / self.tau_CS
 
             dsigma = 0
             dzeta_Ron = 0
@@ -274,8 +289,9 @@ class ModelTest():
             dzeta_W = 0
 
             # [F_R, F_Roff, F_S, F_W, C_R, C_Roff, C_S, C_W, stp, h] = X
-            Y = [dF_R, dF_Roff, dF_S, dF_W, dC_R, dC_Rf, dC_Roff,
-                dC_S, dC_W, dstp, dh, dzeta_Ron, dzeta_Roff, dzeta_S, dzeta_W, ddelta, domega, dsigma]
+            Y = [dF_R, dF_Roff, dF_S, dF_W, dstp, dh, dzeta_Ron, dzeta_Roff, 
+                dzeta_S, dzeta_W, ddelta, domega, dsigma]
+
             return np.array(Y)
 
         #convert hrs and delay to seconds
@@ -1117,28 +1133,28 @@ class ModelTest():
         REM_induced_dur = []
         record_time = False
         delay = 0
-        for i in range(1, len(H[0])):
+        for i in range(1, len(self.H[0])):
             #start recording time if REM period ends
-            if H[0][i-1] == 1 and H[0][i] != 1:
+            if self.H[0][i-1] == 1 and self.H[0][i] != 1:
                 record_time = True
             #if time is being recorded, add timestep for each iteration
             if record_time:
                 delay += 0.05
                 #stop recording time and grab data upon laser onset
-                if X[i-1, -1] == 0 and X[i, -1] != 0:
+                if self.X[i-1, -1] == 0 and self.X[i, -1] != 0:
                     record_time = False
                     onset.append(delay)
                     delay = 0
-                    pressure.append(X[i, -5])
-                    if H[0][i] == 1:
+                    pressure.append(self.X[i, -5])
+                    if self.H[0][i] == 1:
                         REM_induced_onset.append(1)
                     else:
                         REM_induced_onset.append(0)
                     REM_in_dur = False
                     for j in range(int(dur / 0.05)):
-                        if (i + j) >= len(H[0]):
+                        if (i + j) >= len(self.H[0]):
                             continue
-                        if H[0][i + j] == 1:
+                        if self.H[0][i + j] == 1:
                             REM_in_dur = True
                     if REM_in_dur:
                         REM_induced_dur.append(1)
@@ -1195,11 +1211,11 @@ class ModelTest():
         period = int(60 / self.dt)
         time_vec = np.linspace(-period*self.dt, (period*self.dt)/2, int(1.5*period + 1))
 
-        for i in range(len(H[0]) - 1):
-            if H[0][i] != 1 and H[0][i+1] == 1:
-                if i - period < 0 or (i + (period/2) + 1) > len(H[0]):
+        for i in range(len(self.H[0]) - 1):
+            if self.H[0][i] != 1 and self.H[0][i+1] == 1:
+                if i - period < 0 or (i + (period/2) + 1) > len(self.H[0]):
                     continue
-                pre_REM.append(X[i - period: i + int(period/2) + 1, 1])
+                pre_REM.append(self.X[i - period: i + int(period/2) + 1, 1])
 
         Roff_avg_FRs = []
         for i in range(len(pre_REM[0])):
@@ -1230,9 +1246,9 @@ class ModelTest():
             return 0
 
         ma_counter = 0
-        for i in range(len(H[0]) - 1):
-            if H[0][i] == 2:
-                ma_counter += microarousal_count_helper(H, ma_length, self.dt, i)
+        for i in range(len(self.H[0]) - 1):
+            if self.H[0][i] == 2:
+                ma_counter += microarousal_count_helper(self.H, ma_length, self.dt, i)
         return ma_counter
 
     def Roff_FR_inter_REM_norm(self):
@@ -1249,29 +1265,29 @@ class ModelTest():
         rem_periods = []
         curr_inter = []
         curr_rem = []
-        for i in range(1, len(H[0])):
+        for i in range(1, len(self.H[0])):
             #store values for ended REM period and begin recording
-            if H[0][i-1] == 1 and H[0][i] != 1 and record_rem:
+            if self.H[0][i-1] == 1 and self.H[0][i] != 1 and record_rem:
                 record_rem = False
                 rem_periods.append(curr_rem)
                 curr_rem = []
             #stop recording values and save data to list on REM transition
-            elif H[0][i-1] != 1 and H[0][i] == 1 and record_inter:
+            elif self.H[0][i-1] != 1 and self.H[0][i] == 1 and record_inter:
                 record_inter = False
                 inter_rem_periods.append(curr_inter)
                 curr_inter = []
 
             #begin recording desired states on desired transition
-            if H[0][i-1] != 1 and H[0][i] == 1:
+            if self.H[0][i-1] != 1 and self.H[0][i] == 1:
                 record_rem = True
-            elif H[0][i-1] == 1 and H[0][i] != 1:
+            elif self.H[0][i-1] == 1 and self.H[0][i] != 1:
                 record_inter = True
             
             #record REM-off FR for current state
             if record_inter:
-                curr_inter.append(X[i,1])
+                curr_inter.append(self.X[i,1])
             elif record_rem:
-                curr_rem.append(X[i,1])
+                curr_rem.append(self.X[i,1])
 
         #if same amoung of inter-rem and rem recorded, delete last inter-rem recording to preserve
         #rem->inter-rem->rem pattern (keep length of rem_periods longer than inter-rem periods by 1)
@@ -2557,7 +2573,12 @@ class ModelTest():
 
         return wake_fRoff_by_chunk, nrem_fRoff_by_chunk
 
-    def hysteresis_loop(self, seq_thresh=150, save_fig=False):
+    def hysteresis_loop(self, seq_thresh=150, save_fig=False, filename='steady_state_hysteresis_loop'):
+        # load steady state hysteresis data
+        stab_high = np.load('stab_high_fr.npy', allow_pickle=True)
+        stab_low = np.load('stab_low_fr.npy', allow_pickle=True)
+        instab = np.load('instab_fr.npy', allow_pickle=True)
+
         # extract fRon and stp data
         fRon_data = self.X[:,0]
         stp_data = self.X[:,9]
@@ -2574,6 +2595,7 @@ class ModelTest():
 
         # stitch together indices of REM->burst inter->REM periods
         burst_inds = []
+        scatter_burst = []
         for i in range(len(interSeqs)):
             temp = []
             if len(interSeqs[i]) * self.dt < seq_thresh:
@@ -2581,6 +2603,9 @@ class ModelTest():
                 temp.extend(interSeqs[i])
                 temp.extend(remSeqs[i+1])
                 burst_inds.append(temp)
+
+                # append first burst nrem index
+                scatter_burst.append(interSeqs[i][0])
 
         # # identify indices of burst inter-REM periods
         # burst_inds = []
@@ -2598,6 +2623,12 @@ class ModelTest():
         # burst_fRon_data = fRon_data[burst_inds]
         # burst_stp_data = stp_data[burst_inds]
 
+        scatter_fRon_data = []
+        scatter_stp_data = []
+        for ind in scatter_burst:
+            scatter_fRon_data.append(fRon_data[ind])
+            scatter_stp_data.append(stp_data[ind])
+
         # create colors for sequences
         color = []
         num_lines = 10
@@ -2609,16 +2640,22 @@ class ModelTest():
 
         plt.figure()
         plt.plot(stp_data, fRon_data, color='b', linewidth=loop_lw, alpha=0.7)
-        for i in range(num_lines):
-        # for i in range(len(burst_fRon_data)):
-            plt.plot(burst_stp_data[i], burst_fRon_data[i], color=color[i], linewidth=loop_lw+0.35)
+        # for i in range(num_lines):
+        # # for i in range(len(burst_fRon_data)):
+        #     plt.plot(burst_stp_data[i], burst_fRon_data[i], color=color[i], linewidth=loop_lw+0.35)
+        
+        plt.scatter(scatter_stp_data, scatter_fRon_data, color='red')
+        plt.plot(stab_low[:,0], stab_low[:,1], color='black', lw=3)
+        plt.plot(stab_high[:,0], stab_high[:,1], color='black', lw=3)            
+        plt.plot(instab[:,0], instab[:,1], '--', color='gray', lw=3)
         plt.axhline(y=self.theta_R, color='k', linestyle='dashed')
         plt.xlabel('stp')
         plt.ylabel('fRon')
+        plt.xlim([0.6, 1.1])
         sns.despine()
 
         if save_fig:
-            plt.savefig('figures/hysteresis_loop.pdf', bbox_inches = "tight", dpi = 100)
+            plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
 
         plt.show()
     

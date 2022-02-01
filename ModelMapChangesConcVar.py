@@ -79,10 +79,10 @@ class ModelMapChangesConcVar():
     g_W2S = -2.0 # -2.0
     g_W2R = 0.0 # 0.0
     g_R2W = 0.0 # 0.0
-    g_W2Roff = 5.0 # 0
+    g_W2Roff = 0 # 5.0
     g_Roff2W = 0 # 0
     g_Roff2S = 0 # 0
-    g_W2stp = 1
+    g_W2stp = 0.15 # 0.15
 
     tau_CR = 10.0 # 10.0
     tau_CRf = 1.0 # 1.0
@@ -2623,7 +2623,7 @@ class ModelMapChangesConcVar():
 
         return wake_fRoff_by_chunk, nrem_fRoff_by_chunk
 
-    def hysteresis_loop(self, seq_thresh=150, save_fig=False):
+    def hysteresis_loop(self, seq_thresh=150, save_fig=False, filename='hysteresis_loop'):
         # load steady state hysteresis data
         stab_high = np.load('stab_high_fr.npy', allow_pickle=True)
         stab_low = np.load('stab_low_fr.npy', allow_pickle=True)
@@ -2705,7 +2705,7 @@ class ModelMapChangesConcVar():
         sns.despine()
 
         if save_fig:
-            plt.savefig('figures/hysteresis_loop_scatter.pdf', bbox_inches = "tight", dpi = 100)
+            plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
 
         plt.show()
     
