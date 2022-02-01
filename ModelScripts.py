@@ -802,7 +802,7 @@ mTest.hypnogram_fig1(p=1, save=False, filename='no_noise_hysteresis_test_hypno')
 sTest = score_model(mTest, pr=1, p=1)
 # _,_,_ = mTest.inter_REM(p=1, nremOnly=True, log=True)
 # mTest.avg_Ron_and_Roff_by_state()
-mMCCV.hysteresis_loop(save_fig=True, filename='steady_state_no_noise_hysteresis')
+mTest.hysteresis_loop(save_fig=True, filename='steady_state_no_noise_hysteresis')
 # laser_df_test = mTest.laser_trig_percents(dur=dur, multiple=True, ci=95, group=group, refractory_activation=False, save_fig=True)
 
 
