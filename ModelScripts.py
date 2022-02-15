@@ -669,7 +669,7 @@ X0 = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 0]
 IC_conc_var = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0]
 IC_conc_var_steady_state = [5.0, 0.0, 4.0, 5.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0]
 group = 'Roff'
-noise = False
+noise = True
 refractory_activation = True
 
 div = 10
@@ -739,7 +739,7 @@ mMCCV = ModelMapChangesConcVar(IC_conc_var, dt)
 # mMCCV.g_R2Roff = -5.0
 # mMCCV.tau_stpdown = 1650
 # mMCCV.tau_stpup = 1650
-# mMCCV.g_W2Roff = 0
+# mMCCV.g_W2Roff = 5.0
 # mMCCV.g_W2stp = 0.15
 
 # mMCCV.run_mi_model(8, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
@@ -749,7 +749,7 @@ mMCCV = ModelMapChangesConcVar(IC_conc_var, dt)
 # _,_,_ = mMCCV.inter_REM(p=1, nremOnly=False, log=False)
 
 mMCCV.run_mi_model(24 + 2, group=group, sigma=sigma, dur=dur, delay=delay, gap=gap, noise=noise, refractory_activation=False)
-mMCCV.hypnogram_fig1(p=1, save=True, filename='no_noise_hysteresis_test_hypno')
+mMCCV.hypnogram_fig1(p=1, save=False, filename='no_noise_hysteresis_test_hypno')
 # mMCCV.hypnogram_fig1(p=1, p_zoom=1, save=True, filename='fig3_optoHypno')
 sCV = score_model(mMCCV, pr=1, p=1)
 # ron_rem, ron_wake, ron_nrem, roff_rem, roff_wake, roff_nrem = mMCCV.avg_Ron_and_Roff_by_state()
@@ -760,7 +760,7 @@ sCV = score_model(mMCCV, pr=1, p=1)
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM_norm()
 # mMCCV.avg_Ron_Roff_seq_REM_norm_REM_pre_grad(bin_size=40)
 # wake_chunks, nrem_chunks = mMCCV.weber_fig_5b(num_chunks=4, save_fig=True)
-mMCCV.hysteresis_loop(save_fig=True, filename='no_noise_hysteresis')
+mMCCV.hysteresis_loop(raw_data_plot=False, scatter_plot=False, trace_plot=True, bifurcation_plot=True, save_fig=False, filename='burst_rem_scatter_hysteresis_80h')
 # laser_df = mMCCV.laser_trig_percents(pre_post=gap, dur=dur, multiple=True, ci=95, group=group, refractory_activation=False, save_fig=False)
 
 # getting average fW during sleep
@@ -805,6 +805,13 @@ sTest = score_model(mTest, pr=1, p=1)
 mTest.hysteresis_loop(save_fig=True, filename='steady_state_no_noise_hysteresis')
 # laser_df_test = mTest.laser_trig_percents(dur=dur, multiple=True, ci=95, group=group, refractory_activation=False, save_fig=True)
 
+# getting average fW during sleep
+# data_W = mTest.X[:,3]
+# data_H = mTest.H
+# sleep_inds = np.where(data_H[0] != 1)[0]
+# sleep_W = data_W[sleep_inds]
+# avg_sleep_W = np.mean(sleep_W)
+# print(f'Average fW during sleep: {avg_sleep_W}')
 
 # %% ################ Dunmyre Model #####################
 

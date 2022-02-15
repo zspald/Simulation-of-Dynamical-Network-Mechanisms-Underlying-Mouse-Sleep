@@ -2623,7 +2623,7 @@ class ModelMapChangesConcVar():
 
         return wake_fRoff_by_chunk, nrem_fRoff_by_chunk
 
-    def hysteresis_loop(self, seq_thresh=150, save_fig=False, filename='hysteresis_loop'):
+    def hysteresis_loop(self, seq_thresh=150, raw_data_plot=True, scatter_plot=False, trace_plot=False, bifurcation_plot=True, save_fig=False, filename='hysteresis_loop'):
         # load steady state hysteresis data
         stab_high = np.load('stab_high_fr.npy', allow_pickle=True)
         stab_low = np.load('stab_low_fr.npy', allow_pickle=True)
@@ -2636,7 +2636,7 @@ class ModelMapChangesConcVar():
         # get inter-REM sequences
         interSeqs = sleepy.get_sequences(np.where(self.H[0] != 1)[0])
 
-        # delete first and last inter period so all periods are REM->inter->REM
+        # # delete first and last inter period so all periods are REM->inter->REM
         interSeqs = np.delete(interSeqs, 0)
         interSeqs = np.delete(interSeqs, -1)
 
@@ -2645,7 +2645,10 @@ class ModelMapChangesConcVar():
 
         # stitch together indices of REM->burst inter->REM periods
         burst_inds = []
-        scatter_burst = []
+        scatter_burst_nrem_only = []
+        scatter_burst_with_wake = []
+        trace_burst_nrem_only = []
+        trace_burst_with_wake = []
         for i in range(len(interSeqs)):
             temp = []
             if len(interSeqs[i]) * self.dt < seq_thresh:
@@ -2654,30 +2657,43 @@ class ModelMapChangesConcVar():
                 temp.extend(remSeqs[i+1])
                 burst_inds.append(temp)
 
-                # append first burst nrem index
-                scatter_burst.append(interSeqs[i][0])
+                # find point with minimum fRon from inter period
+                fRon_inter = fRon_data[interSeqs[i]]
+                min_inter = np.argmin(fRon_inter)
 
-        # # identify indices of burst inter-REM periods
-        # burst_inds = []
-        # for seq in interSeqs:
-        #     if len(seq) * self.dt < seq_thresh:
-        #         burst_inds.extend(seq)
-        # burst_inds = np.array(burst_inds)
+                # append to different array in inter period is only nrem vs nrem and wake
+                if 2 in self.H[0][interSeqs[i]]:
+                    trace_burst_with_wake.append(interSeqs[i])
+                    scatter_burst_with_wake.append(interSeqs[i][min_inter])
+                else:
+                    trace_burst_nrem_only.append(interSeqs[i])
+                    scatter_burst_nrem_only.append(interSeqs[i][min_inter])
+
 
         # get paired fRon and stp data for burst REM->inter->REM periods
-        burst_fRon_data = []
-        burst_stp_data = []
-        for seq in burst_inds:
-            burst_fRon_data.append(fRon_data[seq])
-            burst_stp_data.append(stp_data[seq])
-        # burst_fRon_data = fRon_data[burst_inds]
-        # burst_stp_data = stp_data[burst_inds]
+        trace_burst_fRon_nrem_only = []
+        trace_burst_stp_nrem_only = []
+        for seq in trace_burst_nrem_only:
+            trace_burst_fRon_nrem_only.append(fRon_data[seq])
+            trace_burst_stp_nrem_only.append(stp_data[seq])
 
-        scatter_fRon_data = []
-        scatter_stp_data = []
-        for ind in scatter_burst:
-            scatter_fRon_data.append(fRon_data[ind])
-            scatter_stp_data.append(stp_data[ind])
+        trace_burst_fRon_with_wake = []
+        trace_burst_stp_with_wake = []
+        for seq in trace_burst_with_wake:
+            trace_burst_fRon_with_wake.append(fRon_data[seq])
+            trace_burst_stp_with_wake.append(stp_data[seq])
+
+        scatter_fRon_data_nrem_only = []
+        scatter_stp_data_nrem_only = []
+        for ind in scatter_burst_nrem_only:
+            scatter_fRon_data_nrem_only.append(fRon_data[ind])
+            scatter_stp_data_nrem_only.append(stp_data[ind])
+
+        scatter_fRon_data_with_wake = []
+        scatter_stp_data_with_wake = []
+        for ind in scatter_burst_with_wake:
+            scatter_fRon_data_with_wake.append(fRon_data[ind])
+            scatter_stp_data_with_wake.append(stp_data[ind])
 
         # create colors for sequences
         color = []
@@ -2689,19 +2705,29 @@ class ModelMapChangesConcVar():
         loop_lw = 1
 
         plt.figure()
-        plt.plot(stp_data, fRon_data, color='b', linewidth=loop_lw, alpha=0.7)
-        # for i in range(num_lines):
-        # # for i in range(len(burst_fRon_data)):
-        #     plt.plot(burst_stp_data[i], burst_fRon_data[i], color=color[i], linewidth=loop_lw+0.35)
+
+        if raw_data_plot:
+            plt.plot(stp_data, fRon_data, color='b', linewidth=loop_lw, alpha=0.7)
+
+        if trace_plot:
+            for i in range(num_lines):
+            # for i in range(len(burst_fRon_data)):
+                plt.plot(trace_burst_stp_nrem_only[i], trace_burst_fRon_nrem_only[i], color='red', linewidth=loop_lw+0.35)
+                plt.plot(trace_burst_stp_with_wake[i], trace_burst_fRon_with_wake[i], color='green', linewidth=loop_lw+0.35)
+
+        if scatter_plot:
+            plt.scatter(scatter_stp_data_nrem_only, scatter_fRon_data_nrem_only, color='red')
+            plt.scatter(scatter_stp_data_with_wake, scatter_fRon_data_with_wake, color='green')
         
-        plt.scatter(scatter_stp_data, scatter_fRon_data, color='red')
-        plt.plot(stab_low[:,0], stab_low[:,1], color='black', lw=3)
-        plt.plot(stab_high[:,0], stab_high[:,1], color='black', lw=3)            
-        plt.plot(instab[:,0], instab[:,1], '--', color='gray', lw=3)
+        if bifurcation_plot:
+            plt.plot(stab_low[:,0], stab_low[:,1], color='black', lw=3)
+            plt.plot(stab_high[:,0], stab_high[:,1], color='black', lw=3)            
+            plt.plot(instab[:,0], instab[:,1], '--', color='gray', lw=3)
+
         plt.axhline(y=self.theta_R, color='k', linestyle='dashed')
         plt.xlabel('stp')
         plt.ylabel('fRon')
-        plt.xlim([0.6, 1.1])
+        plt.xlim([0.6, 1.0])
         sns.despine()
 
         if save_fig:
@@ -2845,6 +2871,7 @@ class ModelMapChangesConcVar():
         
 
         return None
+
 
 
 

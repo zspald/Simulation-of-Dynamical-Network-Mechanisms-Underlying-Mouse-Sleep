@@ -530,12 +530,12 @@ class ModelTest():
             sns.set_style('white')
             axes4 = plt.subplot(414, sharex=axes2)
             # axes4 = plt.axes([0.1, 0.425, 0.8, 0.12])
-            # axes4.plot(t, self.X[:, 9])
-            axes4.plot(t, self.X[:, -1])
+            axes4.plot(t, self.X[:, 4])
+            # axes4.plot(t, self.X[:, -1])
             plt.xlim([t[0], t[-1]])
             plt.xticks(t_ticks, tick_labels)
-            # plt.ylabel('REM \nPressure', rotation=0, ha='right', va='center')
-            plt.ylabel('Opto', rotation=0, ha='right', va='center')
+            plt.ylabel('REM \nPressure', rotation=0, ha='right', va='center')
+            # plt.ylabel('Opto', rotation=0, ha='right', va='center')
             # plt.ylabel('Sleep \nPressure', rotation=0, ha='right', va='center')plt.ylabel('Sleep \nPressure', rotation=0, ha='right', va='center')
             plt.xlabel('Time (hr)')
             sns.despine(ax=axes4)
@@ -2581,7 +2581,7 @@ class ModelTest():
 
         # extract fRon and stp data
         fRon_data = self.X[:,0]
-        stp_data = self.X[:,9]
+        stp_data = self.X[:,4]
 
         # get inter-REM sequences
         interSeqs = sleepy.get_sequences(np.where(self.H[0] != 1)[0])
@@ -2651,7 +2651,7 @@ class ModelTest():
         plt.axhline(y=self.theta_R, color='k', linestyle='dashed')
         plt.xlabel('stp')
         plt.ylabel('fRon')
-        plt.xlim([0.6, 1.1])
+        plt.xlim([0.4, 1.0])
         sns.despine()
 
         if save_fig:

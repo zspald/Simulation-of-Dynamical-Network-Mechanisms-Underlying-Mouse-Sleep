@@ -7,6 +7,7 @@ import numdifftools as nd
 import matplotlib.pyplot as plt
 
 AVG_SLEEP_FW = 0.774338
+# AVG_SLEEP_FW = 0.595462
 psave = 1
 out_path = 'figures/hysteresis'
 
@@ -73,7 +74,7 @@ def mi_const(X, t=0):
     g_W2S = -2.0 # -2.0
     g_W2R = 0.0 # 0.0
     g_R2W = 0.0 # 0.0
-    g_W2Roff = 5.0 # 0
+    g_W2Roff = 0 # 0
     g_Roff2W = 0 # 0
     g_Roff2S = 0 # 0
     g_W2stp = 0.15 # 0.15
@@ -418,7 +419,7 @@ s = np.arange(0, 5, .1)
 
 plt.xlim([min(STP), max(STP)])    
 plt.ylim([-0.1, 4.5])
-ax.xaxis.set_ticks(np.arange(min(STP),max(STP),))
+ax.xaxis.set_ticks(np.arange(min(STP),max(STP),0.1))
 ax.yaxis.set_ticks(range(0, 5))
 
 
