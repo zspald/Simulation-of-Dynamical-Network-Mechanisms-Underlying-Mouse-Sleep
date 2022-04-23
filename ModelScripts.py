@@ -27,6 +27,7 @@ from ModelMapChangesConcVar import ModelMapChangesConcVar
 from ModelTest import ModelTest
 from FileHandling import ParamCSVFile
 from test import test
+import sleepy
 
 # CONTROL DATA VALUES (commented values are for data with MA)
 
@@ -753,23 +754,45 @@ mMCCV.hypnogram_fig1(p=1, save=False, filename='no_noise_hysteresis_test_hypno')
 # mMCCV.hypnogram_fig1(p=1, p_zoom=1, save=True, filename='fig3_optoHypno')
 sCV = score_model(mMCCV, pr=1, p=1)
 # ron_rem, ron_wake, ron_nrem, roff_rem, roff_wake, roff_nrem = mMCCV.avg_Ron_and_Roff_by_state()
-# _,_,_ = mMCCV.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, rem_pre_split=True, save=True, filename='fig1_remPre_%.1f_w2stp_%.1f_w2Roff' % (mMCCV.g_W2stp, mMCCV.g_W2Roff))
+_,_,_ = mMCCV.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, rem_pre_split=False, save=True, filename='fig1_remPre_%.1f_w2stp_%.1f_w2Roff' % (mMCCV.g_W2stp, mMCCV.g_W2Roff))
 # stp_hist = mMCCV.end_of_state_stp_hist('rem', save_fig=True)
-# d = mMCCV.stp_nrem_after_rem(p=1, save_fig=True)
+d = mMCCV.stp_nrem_after_rem(p=1, save_fig=True)
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM()
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM_norm()
 # mMCCV.avg_Ron_Roff_seq_REM_norm_REM_pre_grad(bin_size=40)
 # wake_chunks, nrem_chunks = mMCCV.weber_fig_5b(num_chunks=4, save_fig=True)
-mMCCV.hysteresis_loop(raw_data_plot=False, scatter_plot=False, trace_plot=True, bifurcation_plot=True, save_fig=False, filename='burst_rem_scatter_hysteresis_80h')
+# mMCCV.hysteresis_loop(raw_data_plot=False, scatter_plot=False, trace_plot=True, bifurcation_plot=True, save_fig=False, filename='burst_rem_scatter_hysteresis_80h')
 # laser_df = mMCCV.laser_trig_percents(pre_post=gap, dur=dur, multiple=True, ci=95, group=group, refractory_activation=False, save_fig=False)
 
-# getting average fW during sleep
-# data_W = mMCCV.X[:,3]
-# data_H = mMCCV.H
-# sleep_inds = np.where(data_H[0] != 1)[0]
-# sleep_W = data_W[sleep_inds]
-# avg_sleep_W = np.mean(sleep_W)
+# getting average values during sleep
+data_W = mMCCV.X[:,3]
+data_H = mMCCV.H
+sleep_inds = np.where(data_H[0] != 1)[0]
+sleep_W = data_W[sleep_inds]
+avg_sleep_W = np.mean(sleep_W)
+
+# print(f'Average cW during sleep: {avg_sleep_W}') #TODO
 # print(f'Average fW during sleep: {avg_sleep_W}')
+
+# %% Save data in .mat file for Dr. Weber
+
+import scipy.io as sio
+
+sleep_dict = {}
+sleep_dict['hypnogram'] = mMCCV.H[0]
+sleep_dict['fRon'] = mMCCV.X[:,0]
+sleep_dict['fRoff'] = mMCCV.X[:,1]
+sleep_dict['fS'] = mMCCV.X[:,2]
+sleep_dict['fW'] = mMCCV.X[:,3]
+sleep_dict['stp'] = mMCCV.X[:,9]
+sleep_dict['h'] = mMCCV.X[:,10]
+sleep_dict['Notes'] = 'Sleep data generated from modification of Dunmyre Model \
+    for mouse sleep. For hypnogram, REM=1, wake=2, NREM=3. A timestep of 0.05 \
+    seconds is used between points (144000 samples for 2 hours of sleep). See \
+    https://github.com/zspald/Simulation-of-Dynamical-Network-Mechanisms-Underlying-Mouse-Sleep \
+    for more information on project and source code.'
+
+sio.savemat('saved_data\\neuropixel_sleepData.mat', sleep_dict)
 
 # %% ##### RUN WITH REFRACTORY ACTIVATION #####
 
@@ -815,15 +838,18 @@ mTest.hysteresis_loop(save_fig=True, filename='steady_state_no_noise_hysteresis'
 
 # %% ################ Dunmyre Model #####################
 
-mConcVar = ModelDunConcVar(IC_conc_var, dt)
-mConcVar.run_mi_model(80 + 2, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
+mDun = ModelDunConcVar(IC_conc_var, dt)
+mDun.delta_update = 3.0
+mDun.run_mi_model(24 + 2, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
 # mConcVar.hypnogram(p=1)
-mConcVar.hypnogram_fig1(p=1, save=False)
-s10 = score_model(mConcVar, pr=1, p=1)
-# mConcVar.avg_Ron_and_Roff_by_state()
-mConcVar.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, rem_pre_split=False, save=True)
-# stp_hist = mConcVar.end_of_state_stp_hist('rem', save_fig=True)
-stp_nrem_to_rem_dun = mConcVar.stp_nrem_after_rem(p=1, save_fig=True)
+mDun.hypnogram_fig1(p=1, p_zoom=0, save=False)
+s10 = score_model(mDun, pr=1, p=1)
+# mDun.avg_Ron_and_Roff_by_state()
+mDun.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, rem_pre_split=False, save=False)
+# stp_hist = mDun.end_of_state_stp_hist('rem', save_fig=True)
+stp_nrem_to_rem_dun = mDun.stp_nrem_after_rem(p=1, save_fig=False, filename='stp_nrem_after_rem_dun_mod_line')
+
+# %% ######################################################
 
 # mWeb = ModelWeber(X0, dt)
 # mWeb.g_Roff2R = -4.0
@@ -916,13 +942,13 @@ stp_nrem_to_rem_dun = mConcVar.stp_nrem_after_rem(p=1, save_fig=True)
 # mOld.run_mi_model(8, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
 # mOld.hypnogram(p=1)
 # s9 = score_model(mOld, pr=1, p=1)
-# mOld.avg_Ron_and_Roff_by_state()
-# # mOld.inter_REM()
+# # mOld.avg_Ron_and_Roff_by_state()
+# mOld.inter_REM()
 
 # mConcVar = ModelDunConcVar(IC_conc_var, dt)
-# mConcVar.run_mi_model(72, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
+# mConcVar.run_mi_model(8, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
 # # mConcVar.hypnogram(p=1)
-# mConcVar.hypnogram(p=0)
+# mConcVar.hypnogram_fig1(p=1)
 # # s10 = score_model(mConcVar, pr=1, p=1)
 # # mConcVar.avg_Ron_and_Roff_by_state()
 # mConcVar.inter_REM(p=1, nremOnly=True, log=True)

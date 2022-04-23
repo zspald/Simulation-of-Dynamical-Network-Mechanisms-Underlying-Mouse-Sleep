@@ -985,17 +985,18 @@ class ModelMapChangesConcVar():
         #regression line and r^2
         m, b, r, _, _ = stats.linregress(nonseq_rem, nonseq_inter)
 
+        
         #plot data in scatter plot
         if not rem_pre_split:
             if p == 1:
                 sns.set(font_scale=1)
-
-                plt.figure()
+                
+                plt.figure(figsize=(10,6))
                 sns.set_context('paper')
                 sns.set_style('white')
-                plt.scatter(seq_rem, seq_inter, color='gray')
-                plt.scatter(nonseq_rem, nonseq_inter, color='blue')
-                plt.plot(REM_durations, np.multiply(m,REM_durations) + b, color = 'red')
+                plt.scatter(seq_rem, seq_inter, color='gray', alpha=0.25, label='Sequential REM')
+                plt.scatter(nonseq_rem, nonseq_inter, color='blue', alpha=0.65, label='Singlular REM')
+                plt.plot(REM_durations, np.multiply(m,REM_durations) + b, color = 'blue')
                 plt.xlabel('REM_pre (s)')
                 if nremOnly:
                     plt.ylabel('|NREM| \n(s)', rotation=0, ha='center', va='center', labelpad=20)
@@ -1025,7 +1026,7 @@ class ModelMapChangesConcVar():
 
                 # print(f'Regression Line: Inter = {np.round(logM, 2)}(REM_pre) + {np.round(logB, 2)}')
 
-                _, (ax1, ax2) = plt.subplots(1,2)
+                _, (ax1, ax2) = plt.subplots(1,2,figsize=(12,6))
 
                 sns.histplot(REM_durations, bins=30, ax=ax1)
                 ax1.set_ylabel('Count', rotation=0, ha='right', va='center')
@@ -2796,6 +2797,7 @@ class ModelMapChangesConcVar():
         rem_durs_direct = []
         rem_durs_indirect = []
         for i, transition in enumerate(seq_diffs):
+            # transition from REM->inter or vice versa
             if transition > 0:
                 nrem_ind = (rem_nrem_seqs[i+1])[0]
                 rem_seq = rem_nrem_seqs[i]
@@ -2808,7 +2810,7 @@ class ModelMapChangesConcVar():
                 else:
                     stp_rem_to_nrem_indirect.append(self.X[nrem_ind,9])
                     rem_durs_indirect.append(len(rem_seq) * self.dt)
-
+            
 
         stp_rem_to_nrem_direct = np.array(stp_rem_to_nrem_direct)
         stp_rem_to_nrem_indirect = np.array(stp_rem_to_nrem_indirect)
@@ -2817,20 +2819,49 @@ class ModelMapChangesConcVar():
         print(f'Direct: {stp_rem_to_nrem_direct.shape, rem_durs_direct.shape}')
         print(f'Indirect: {stp_rem_to_nrem_indirect.shape, rem_durs_indirect.shape}')
 
+        #trendlines
+        dirM, dirB, dirR, dirP, _ = stats.linregress(rem_durs_direct, stp_rem_to_nrem_direct)
+        indirM, indirB, indirR, indirP, _ = stats.linregress(rem_durs_indirect, stp_rem_to_nrem_indirect)
+
+        #fucntion for decimal rounding in plot text
+        def round_decimals_up(number:float, decimals:int=2):
+            """
+            Returns a value rounded up to a specific number of decimal places. From https://kodify.net/python/math/round-decimals/
+            """
+            if not isinstance(decimals, int):
+                raise TypeError("decimal places must be an integer")
+            elif decimals < 0:
+                raise ValueError("decimal places has to be 0 or more")
+            elif decimals == 0:
+                return math.ceil(number)
+
+            factor = 10 ** decimals
+            return math.ceil(number * factor) / factor
+
         #plot data in scatter plot
         if p == 1:
             sns.set(font_scale=1)
 
-            plt.figure()
+            plt.figure(figsize=(8,5))
             sns.set_context('paper')
             sns.set_style('white')
-            plt.scatter(rem_durs_direct, stp_rem_to_nrem_direct, color='blue', label='REM->NREM')
-            plt.scatter(rem_durs_indirect, stp_rem_to_nrem_indirect, color='red', label='REM->Wake->NREM')
-            plt.xlabel('REM_pre (s)')
-            plt.ylabel('STP', rotation=0, ha='center', va='center', labelpad=20)
-            plt.title('STP From First NREM State Following REM')
-            plt.legend()
-            # plt.text(max(REM_durations) - 25, m * max(REM_durations) + (b + 50), f'R^2: {round(r**2, 2)}', fontsize = 12)
+            plt.scatter(rem_durs_direct, stp_rem_to_nrem_direct, color='blue', alpha=0.35, label='REM->NREM' + \
+                ':' + f'R^2={round_decimals_up(dirR**2, 2)}' + ', ' + f'P={round_decimals_up(dirP, 3)}')
+            plt.plot(rem_durs_direct, np.multiply(dirM, rem_durs_direct) + dirB, + dirB, color = 'blue')
+            plt.scatter(rem_durs_indirect, stp_rem_to_nrem_indirect, color='red', alpha=0.35, label='REM->Wake->NREM' + \
+                ':' + f'R^2={round_decimals_up(indirR**2, 2)}' + ', ' + f'P={round_decimals_up(indirP**2, 3)}')
+            plt.plot(rem_durs_indirect, np.multiply(indirM, rem_durs_indirect) + indirB, + indirB, color = 'red')
+            plt.xlabel('REM_pre (s)', fontsize=12)
+            plt.ylabel('STP', rotation=0, ha='center', va='center', labelpad=20, fontsize=12)
+            plt.title('STP From First NREM State Following REM', fontsize=12)
+            plt.legend(fontsize=12)
+            
+            print(f'Regression Line REM->NREM: Inter = {np.round(dirM, 5)}(REM_pre) + {np.round(dirB, 2)}, R^2={round(dirR**2, 2)}, P={round_decimals_up(dirP**2, 3)}')
+            print(f'Regression Line REM->Wake->REM: Inter = {np.round(indirM, 5)}(REM_pre) + {np.round(indirB, 2)}, R^2={round(indirR**2, 2)}, P={round_decimals_up(indirP**2, 3)}')
+
+            # plt.text(max(rem_durs_direct) - 35, dirM * (max(rem_durs_direct) - 35) + (dirB + 0.05), f'R^2: {round(dirR**2, 2)}' + ', ' + f'P: {round(dirP, 4)}', fontsize = 12)
+            # plt.text(min(rem_durs_indirect) + 25, indirM * (min(rem_durs_indirect) + 25) + (indirB + 0.05), f'R^2: {round(indirR**2, 2)}' + ', ' + f'P: {round(indirP**2, 4)}', fontsize = 12)
+
             sns.despine()
             if save_fig:
                 plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
