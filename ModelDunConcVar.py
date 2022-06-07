@@ -817,20 +817,24 @@ class ModelDunConcVar():
         if (len(REM_durations) > len(inter_durations)):
             del REM_durations[-1]
 
-        #delete inter-REM durations of length zero (result of REM-wake-REM) and
-        #corresponding REM duration
-        for i in range(len(inter_durations)):
-            if i >= len(inter_durations):
-                continue
-            if inter_durations[i] == 0:
-                del inter_durations[i]
-                del REM_durations[i]
-                del inter_locs[i]
-
         #convert to np arrays for easier manipulation
         REM_durations = np.array(REM_durations)
         inter_locs = np.array(inter_locs)
         inter_durations = np.array(inter_durations)
+
+        #delete inter-REM durations of length zero (result of REM-wake-REM) and
+        #corresponding REM duration
+        REM_durations = REM_durations[inter_durations > 0]
+        inter_locs = inter_locs[inter_durations > 0]
+        inter_durations = inter_durations[inter_durations > 0]
+
+        # for i in range(len(inter_durations)):
+        #     if i >= len(inter_durations):
+        #         continue
+        #     if inter_durations[i] == 0:
+        #         del inter_durations[i]
+        #         del REM_durations[i]
+        #         del inter_locs[i]
 
         #separate by sequential and non-sequential
         seq_rem = REM_durations[inter_durations < seq_thresh]
@@ -870,6 +874,7 @@ class ModelDunConcVar():
                     plt.ylabel('Inter-REM Duration (s)')
                 # plt.title('REM Duration vs Inter-REM Duration')
                 # plt.text(max(REM_durations) - 25, m * max(REM_durations) + (b + 50), f'R^2: {round(r**2, 2)}', fontsize = 12)
+                plt.gca().set_ylim(bottom=0)
                 sns.despine()
                 if save:
                     plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)

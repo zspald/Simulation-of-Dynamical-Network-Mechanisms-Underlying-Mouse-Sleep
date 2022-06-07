@@ -371,7 +371,8 @@ def brute_force(hrs, group, sigma, dur, delay, noise, csvfile):
     second_m = None
     third_m = None
 
-    X0 = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 0]
+    # IC = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 0]
+    IC = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0]
     dt = 0.05
 
     print('Running Parameter Iterations...')
@@ -384,7 +385,7 @@ def brute_force(hrs, group, sigma, dur, delay, noise, csvfile):
             for j in np.arange(-6, -0.9, 0.5): # g_R2Roff
                 for k in np.arange(600, 1501, 150): # tau_stpdown
                     #set parameters
-                    model = ModelMapChanges(X0, dt)
+                    model = ModelMapChanges(IC, dt)
                     model.g_Roff2R = i
                     model.g_R2Roff = j
                     model.tau_stpdown = k
@@ -461,37 +462,40 @@ def brute_force_mod(model, mType, mod, div, hrs, group, sigma, dur, delay, noise
     sc = [first_s, second_s, third_s]
     mo = [first_m, second_m, third_m]
 
-    X0 = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 0]
+    # IC = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 0]
+    IC = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0]
     dt = 0.05
 
-    tot = div #div**2
+    tot = div**2
 
     inter = False
     try:
         with tqdm(total=tot, file=sys.stdout) as pbar:
-            for i in np.linspace(model.g_W2Roff + (5/mod), model.g_W2Roff - (5/mod), div): # g_Roff2R
+            # for i in np.linspace(model.g_W2Roff + (5/mod), model.g_W2Roff - (5/mod), div): # g_Roff2R
                 # for j in np.linspace(model.g_W2S + (5/mod), model.g_W2S - (5/mod), div): # g_R2Roff
                     # for k in np.linspace(model.tau_stpdown + (1000/mod), model.tau_stpdown - (1000/mod), div): # tau_stpdown
                     #     for x in np.linspace(model.tau_stpup + (1000/mod), model.tau_stpup - (1000/mod), div): # tau_stpup
-                            # for y in np.linspace(model.delta2W + (0.5/mod), model.delta2W - (0.5/mod), div):
-                            #     for z in np.linspace(model.delta2Roff + (0.5/mod), model.delta2Roff - (0.5/mod), div):
+                            for y in np.linspace(model.tau_stpW + (1000/mod), model.tau_stpW - (30/mod), div): #tau_stpW
+                                for z in np.linspace(model.delta_update + (10/mod), model.delta_update - (10/mod), div): #delta_update
 
                                     #set parameters
                                     if mType == 'MC':
-                                        m = ModelMapChanges(X0, dt)
+                                        m = ModelMapChanges(IC, dt)
                                     elif mType == 'W':
-                                        m = ModelWeber(X0, dt)
-                                    m.g_W2Roff = i
+                                        m = ModelWeber(IC, dt)
+                                    elif mType == 'D':
+                                        m = ModelDunConcVar(IC, dt)
+                                    # m.g_W2Roff = i
                                     # m.g_R2Roff = j
-                                    m.g_Roff2R = -4.0
-                                    m.g_R2Roff = -3.6
+                                    # m.g_Roff2R = -4.0
+                                    # m.g_R2Roff = -3.6
 
                                     # m.g_S2W = i
                                     # m.g_W2S = j
                                     # m.tau_stpdown = k
                                     # m.tau_stpup = x
-                                    # m.delta2W = y
-                                    # m.delta2Roff = z
+                                    m.tau_stpW = y
+                                    m.delta_update = z
 
                                     m.run_mi_model(hrs, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
                                     m.hypnogram(p=0)
@@ -552,14 +556,17 @@ def funnel_solve(div, hrs, group, sigma, dur, delay, noise, csvfile, mType):
         [list]: model list of winning models
     """
     #initialize standard model for first iteration
-    X0 = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 0]
+    # IC = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 0]
+    IC = [5.0, 0.0, 4.0, 5.0, 0.2, 1.0, 0.0, 0.4, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0]
     dt = 0.05
 
     # select model type
     if mType == 'MC':
-        model = ModelMapChangesConcVar(X0, dt)
+        model = ModelMapChangesConcVar(IC, dt)
     elif mType == 'W':
-        model = ModelWeber(X0, dt)
+        model = ModelWeber(IC, dt)
+    elif mType == 'D':
+        model = ModelDunConcVar(IC, dt)
 
     #create arrays to hold models and scores
     m_arr = np.array([])
@@ -588,10 +595,12 @@ def funnel_solve(div, hrs, group, sigma, dur, delay, noise, csvfile, mType):
                 model = m_arr[low_sc_ind]
                 
                 print('Winner:')
-                print(f'    g_W2Roff: {model.g_W2Roff}')
+                # print(f'    g_W2Roff: {model.g_W2Roff}')
                 # print(f'    g_W2S: {model.tau_stpup}')
                 # print(f'    tau_stpdown: {model.tau_stpdown}')
                 # print(f'    tau_stpup: {model.tau_stpup}')
+                print(f'    tau_stpW: {model.tau_stpW}')
+                print(f'    delta_update: {model.delta_update}')
                 print(f'    Score: {s_arr[low_sc_ind]} \n')
                 #update parameter to reduce range for next step of funnel
                 mod *= 2
@@ -693,6 +702,15 @@ for _, _, files in os.walk('.', topdown=False):
     else:
         paramSetsW = ParamCSVFile(filename, True)
 
+# create file for Dunmyre object
+filename = 'paramSetsD.csv'
+paramSetsD = None
+for _, _, files in os.walk('.', topdown=False):
+    if filename in files:
+        paramSetsD = ParamCSVFile(filename, False)
+    else:
+        paramSetsD = ParamCSVFile(filename, True)
+
 
 ######################### Testing of Various Model Classes (most code commented out) ############################
 
@@ -716,9 +734,10 @@ else:
 
 # scores, models = brute_force(hrs, group, sigma, dur, delay, noise, paramSets)
 
-# print('----- Funnel-Solve -----')
-# scores2, models2 = funnel_solve(div, 4, group, sigma, dur, delay, noise, paramSetsW, 'MC')
+print('----- Funnel-Solve -----')
+scores2, models2 = funnel_solve(div, 8, group, sigma, dur, delay, noise, paramSetsD, 'D')
 
+# %%
 # mMC = ModelMapChanges(X0, dt)
 # mMC.g_Roff2R = -7.0
 # mMC.g_R2Roff = -5.0
@@ -733,6 +752,7 @@ else:
 # # _,_,_ = mMC.inter_REM(p=1, nremOnly=False, log=True)
 # # laser_trig_percents([mMC.X], [mMC.H], dt, 600, 300, ci='None')
 
+# %%
 ##### STANDARD MODEL #####
 
 mMCCV = ModelMapChangesConcVar(IC_conc_var, dt)
@@ -749,14 +769,14 @@ mMCCV = ModelMapChangesConcVar(IC_conc_var, dt)
 # # mMCCV.avg_Ron_and_Roff_by_state()
 # _,_,_ = mMCCV.inter_REM(p=1, nremOnly=False, log=False)
 
-mMCCV.run_mi_model(24 + 2, group=group, sigma=sigma, dur=dur, delay=delay, gap=gap, noise=noise, refractory_activation=False)
+mMCCV.run_mi_model(80 + 2, group=group, sigma=sigma, dur=dur, delay=delay, gap=gap, noise=noise, refractory_activation=False)
 mMCCV.hypnogram_fig1(p=1, save=False, filename='no_noise_hysteresis_test_hypno')
 # mMCCV.hypnogram_fig1(p=1, p_zoom=1, save=True, filename='fig3_optoHypno')
 sCV = score_model(mMCCV, pr=1, p=1)
 # ron_rem, ron_wake, ron_nrem, roff_rem, roff_wake, roff_nrem = mMCCV.avg_Ron_and_Roff_by_state()
-_,_,_ = mMCCV.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, rem_pre_split=False, save=True, filename='fig1_remPre_%.1f_w2stp_%.1f_w2Roff' % (mMCCV.g_W2stp, mMCCV.g_W2Roff))
+a,b,c = mMCCV.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, rem_pre_split=False, save=False, filename='fig1_remPre_%.1f_w2stp_%.1f_w2Roff' % (mMCCV.g_W2stp, mMCCV.g_W2Roff))
 # stp_hist = mMCCV.end_of_state_stp_hist('rem', save_fig=True)
-d = mMCCV.stp_nrem_after_rem(p=1, save_fig=True)
+# d = mMCCV.stp_nrem_after_rem(p=1, save_fig=True)
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM()
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM_norm()
 # mMCCV.avg_Ron_Roff_seq_REM_norm_REM_pre_grad(bin_size=40)
@@ -765,11 +785,11 @@ d = mMCCV.stp_nrem_after_rem(p=1, save_fig=True)
 # laser_df = mMCCV.laser_trig_percents(pre_post=gap, dur=dur, multiple=True, ci=95, group=group, refractory_activation=False, save_fig=False)
 
 # getting average values during sleep
-data_W = mMCCV.X[:,3]
-data_H = mMCCV.H
-sleep_inds = np.where(data_H[0] != 1)[0]
-sleep_W = data_W[sleep_inds]
-avg_sleep_W = np.mean(sleep_W)
+# data_W = mMCCV.X[:,3]
+# data_H = mMCCV.H
+# sleep_inds = np.where(data_H[0] != 1)[0]
+# sleep_W = data_W[sleep_inds]
+# avg_sleep_W = np.mean(sleep_W)
 
 # print(f'Average cW during sleep: {avg_sleep_W}') #TODO
 # print(f'Average fW during sleep: {avg_sleep_W}')
@@ -839,15 +859,17 @@ mTest.hysteresis_loop(save_fig=True, filename='steady_state_no_noise_hysteresis'
 # %% ################ Dunmyre Model #####################
 
 mDun = ModelDunConcVar(IC_conc_var, dt)
-mDun.delta_update = 3.0
-mDun.run_mi_model(24 + 2, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
+mDun.tau_stpW = 400
+mDun.delta_update = 4.0
+
+mDun.run_mi_model(80 + 2, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
 # mConcVar.hypnogram(p=1)
 mDun.hypnogram_fig1(p=1, p_zoom=0, save=False)
 s10 = score_model(mDun, pr=1, p=1)
 # mDun.avg_Ron_and_Roff_by_state()
 mDun.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, rem_pre_split=False, save=False)
 # stp_hist = mDun.end_of_state_stp_hist('rem', save_fig=True)
-stp_nrem_to_rem_dun = mDun.stp_nrem_after_rem(p=1, save_fig=False, filename='stp_nrem_after_rem_dun_mod_line')
+# stp_nrem_to_rem_dun = mDun.stp_nrem_after_rem(p=1, save_fig=False, filename='stp_nrem_after_rem_dun_mod_line')
 
 # %% ######################################################
 

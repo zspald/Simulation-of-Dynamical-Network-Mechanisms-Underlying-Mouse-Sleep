@@ -149,6 +149,26 @@ class ModelMapChangesConcVar():
         for i in range(len(self.paramNameList)):
             self.paramDict[self.paramNameList[i]] = self.paramValList[i]
 
+    def save_model_data(model_name):
+        # add X0, dt, X, H to dictionary
+
+        # create new folder for corresponding model
+
+        # save X0, dt, X, H dict as mat file
+
+        # save parameter dict as mat file
+        pass
+
+    def load_model_data(filename):
+        # load in model data mat file
+
+        # assign parts of mat file to corresponding model fields
+
+        # load in parameters from mat file
+
+        # assign paramters
+        pass
+
     def run_mi_model(self, hrs, group='None', sigma=0, dur=5*60, delay=0, gap=15*60, gap_rand=False, gap_range=[1, 25], noise=False, refractory_activation=False):
         """Simulates sleep from a model neuron population over time using the MI model with given initial conditions and optional optogenetic activation
 
@@ -899,8 +919,6 @@ class ModelMapChangesConcVar():
         plt.savefig('figures/fig2_avgRonRoffByState.pdf', bbox_inches = "tight", dpi = 100)
         plt.show()
 
-        return ron_rem, ron_wake, ron_nrem, roff_rem, roff_wake, roff_nrem
-
         #print results as mean +/- std
         # print(f'Average REM-on activity during REM is {avg_by_state[0]} +/- {ron_std[0]}')
         # print(f'Average REM-on activity during Wake is {avg_by_state[1]} +/- {ron_std[1]}')
@@ -908,6 +926,8 @@ class ModelMapChangesConcVar():
         # print(f'Average REM-off activity during REM is {avg_by_state[3]} +/- {roff_std[0]}')
         # print(f'Average REM-off activity during Wake is {avg_by_state[4]} +/- {roff_std[1]}')
         # print(f'Average REM-off activity during NREM is {avg_by_state[5]} +/- {roff_std[2]}')
+
+        return ron_rem, ron_wake, ron_nrem, roff_rem, roff_wake, roff_nrem
 
     def inter_REM(self, seq_thresh=100, p=0, zoom_out=0, nremOnly=False, log=False, rem_pre_split=False, save=False, filename='fig1_remPre'):
         """Plots association between REM durations and following inter-REM durations (NREM only)
@@ -946,25 +966,29 @@ class ModelMapChangesConcVar():
             inter_durations.append(inter_counter * self.dt)
         
         #if the end of the last inter-REM period was not saved due to the full period 
-        # not being saved, delete the last REM duration (corresponding to the incomplete)
-        #inter-REM
+        # not being saved, delete the last REM duration (corresponding to the incomplete
+        # inter-REM)
         if (len(REM_durations) > len(inter_durations)):
             del REM_durations[-1]
-
-        #delete inter-REM durations of length zero (result of REM-wake-REM) and
-        #corresponding REM duration
-        for i in range(len(inter_durations)):
-            if i >= len(inter_durations):
-                continue
-            if inter_durations[i] == 0:
-                del inter_durations[i]
-                del REM_durations[i]
-                del inter_locs[i]
 
         #convert to np arrays for easier manipulation
         REM_durations = np.array(REM_durations)
         inter_locs = np.array(inter_locs)
         inter_durations = np.array(inter_durations)
+
+        #delete inter-REM durations of length zero (result of REM-wake-REM) and
+        #corresponding REM duration
+        REM_durations = REM_durations[inter_durations > 0]
+        inter_locs = inter_locs[inter_durations > 0]
+        inter_durations = inter_durations[inter_durations > 0]
+
+        # for i in range(len(inter_durations)):
+        #     if i >= len(inter_durations):
+        #         continue
+        #     if inter_durations[i] == 0:
+        #         del inter_durations[i]
+        #         del REM_durations[i]
+        #         del inter_locs[i]
 
         #separate by sequential and non-sequential
         seq_rem = REM_durations[inter_durations < seq_thresh]
@@ -1004,6 +1028,7 @@ class ModelMapChangesConcVar():
                     plt.ylabel('Inter-REM Duration (s)')
                 # plt.title('REM Duration vs Inter-REM Duration')
                 # plt.text(max(REM_durations) - 25, m * max(REM_durations) + (b + 50), f'R^2: {round(r**2, 2)}', fontsize = 12)
+                plt.gca().set_ylim(bottom=0)
                 sns.despine()
                 if save:
                     plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
@@ -2637,7 +2662,7 @@ class ModelMapChangesConcVar():
         # get inter-REM sequences
         interSeqs = sleepy.get_sequences(np.where(self.H[0] != 1)[0])
 
-        # # delete first and last inter period so all periods are REM->inter->REM
+        # delete first and last inter period so all periods are REM->inter->REM
         interSeqs = np.delete(interSeqs, 0)
         interSeqs = np.delete(interSeqs, -1)
 
@@ -2868,7 +2893,6 @@ class ModelMapChangesConcVar():
             plt.show()
 
         return rem_nrem_seqs, seq_labels, seq_diffs, stp_rem_to_nrem_direct, stp_rem_to_nrem_indirect
-
 
     #TODO
     def delta_stp_inter(self):
