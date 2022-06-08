@@ -17,6 +17,9 @@ from scipy import signal, stats
 from sklearn.mixture import GaussianMixture
 from pingouin import compute_bootci
 from random import randint
+import os
+import shutil
+import scipy.io as sio
 
 import sleepy
 
@@ -26,7 +29,7 @@ FONT_SIZE=14
 class ModelMapChangesConcVar():
     """Object for Flip-Flop Model with architectural changes implemented to F_W -> stp inhibition (stp constant during wake, removal of inhibition)
     """
-    # Parameters
+    # Default Parameters
     R_max = 5.0 # 5.0
     Roff_max = 5.0 # 5.0
     W_max = 5.50 # 5.50
@@ -101,8 +104,8 @@ class ModelMapChangesConcVar():
                     'tau_stpW', 'h_max', 'h_min', 'omega_max', 'omega_min', 'theta_R',
                     'theta_W', 'tau_stpup', 'tau_stpdown', 'tau_hup', 'tau_hdown', 'tau_omega',
                     'tau_stim', 'g_Roff2R', 'g_R2Roff', 'g_S2W', 'g_W2S', 'g_W2R', 'g_R2W', 
-                    'g_W2Roff', 'g_Roff2W', 'g_Roff2S', 'tau_CR', 'tau_CRf', 'tau_CRoff',
-                    'tau_CW', 'tau_CS', 'delta_update']
+                    'g_W2Roff', 'g_Roff2W', 'g_Roff2S', 'g_W2stp', 'tau_CR', 'tau_CRf', 'tau_CRoff',
+                    'tau_CW', 'tau_CS', 'delta_update', 'delta2W', 'delta2Roff']
 
     paramValList = [R_max, Roff_max, W_max, S_max, tau_Roff, tau_R, 
                     tau_W, tau_S, alpha_Roff, alpha_R, alpha_W, beta_R,
@@ -111,8 +114,8 @@ class ModelMapChangesConcVar():
                     tau_stpW, h_max, h_min, omega_max, omega_min, theta_R,
                     theta_W, tau_stpup, tau_stpdown, tau_hup, tau_hdown, tau_omega,
                     tau_stim, g_Roff2R, g_R2Roff, g_S2W, g_W2S, g_W2R, g_R2W, 
-                    g_W2Roff, g_Roff2W, g_Roff2S, tau_CR, tau_CRf, tau_CRoff,
-                    tau_CW, tau_CS, delta_update]
+                    g_W2Roff, g_Roff2W, g_Roff2S, g_W2stp, tau_CR, tau_CRf, tau_CRoff,
+                    tau_CW, tau_CS, delta_update, delta2W, delta2Roff]
 
     paramDict = {}
     for i in range(len(paramNameList)):
@@ -142,32 +145,63 @@ class ModelMapChangesConcVar():
                     self.tau_stpW, self.h_max, self.h_min, self.omega_max, self.omega_min, self.theta_R,
                     self.theta_W, self.tau_stpup, self.tau_stpdown, self.tau_hup, self.tau_hdown, self.tau_omega,
                     self.tau_stim, self.g_Roff2R, self.g_R2Roff, self.g_S2W, self.g_W2S, self.g_W2R, self.g_R2W, 
-                    self.g_W2Roff, self.g_Roff2W, self.g_Roff2S, self.tau_CR, self.tau_CRf, self.tau_CRoff,
-                    self.tau_CW, self.tau_CS, self.delta_update]
+                    self.g_W2Roff, self.g_Roff2W, self.g_Roff2S, self.g_W2stp, self.tau_CR, self.tau_CRf, self.tau_CRoff,
+                    self.tau_CW, self.tau_CS, self.delta_update, self.delta2W, self.delta2Roff]
 
         self.paramDict = {}
         for i in range(len(self.paramNameList)):
             self.paramDict[self.paramNameList[i]] = self.paramValList[i]
 
-    def save_model_data(model_name):
+    def save_model_data(self, model_name, overwrite=False):
+        # set path for model to save to
+        model_path = 'model_data/' + model_name
+
         # add X0, dt, X, H to dictionary
+        save_dict = {}
+        save_dict['X0'] = self.X0
+        save_dict['dt'] = self.dt
+        save_dict['X'] = self.X
+        save_dict['H'] = self.H
 
-        # create new folder for corresponding model
+        # create new folder for corresponding model if it does not already exist
+        to_save = False
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+            to_save = True
+        else:
+            if overwrite:
+                to_save = True
+            else:
+                print(f'{model_name} Data Already Exists - use "Overwrite" input to overwrite saved model data')
 
-        # save X0, dt, X, H dict as mat file
+        if to_save:
+            # save X0, dt, X, H dict as mat file
+            sio.savemat(model_path + '/' + model_name + '_data.mat', save_dict)
 
-        # save parameter dict as mat file
-        pass
+            # save parameter dict as mat file
+            sio.savemat(model_path + '/' + model_name + '_params.mat', self.paramDict)
 
-    def load_model_data(filename):
-        # load in model data mat file
+            print(f'{model_name} Data Successfully Saved')
+
+    def load_model_data(self, model_name):
+        # load in model data and parameter mat files
+        model_path = 'model_data/' + model_name
+        model_data = sio.loadmat(model_path + '/' + model_name + '_data.mat')
+        model_params = sio.loadmat(model_path + '/' + model_name + '_params.mat', squeeze_me=True)
 
         # assign parts of mat file to corresponding model fields
+        self.X0 = model_data['X0'].squeeze()
+        self.dt = model_data['dt'].squeeze()
+        self.X = model_data['X']
+        self.H = model_data['H']
 
-        # load in parameters from mat file
+        # remove header from mat file
+        model_params.pop('__header__', None)
+        model_params.pop('__version__', None)
+        model_params.pop('__globals__', None)
 
-        # assign paramters
-        pass
+        # save new parameter dict to model
+        self.paramDict = model_params
 
     def run_mi_model(self, hrs, group='None', sigma=0, dur=5*60, delay=0, gap=15*60, gap_rand=False, gap_range=[1, 25], noise=False, refractory_activation=False):
         """Simulates sleep from a model neuron population over time using the MI model with given initial conditions and optional optogenetic activation
@@ -188,6 +222,9 @@ class ModelMapChangesConcVar():
         Returns:
             None - updates simulation data of model object
         """
+
+        # make sure that parameter dictionary is up to date with any outside modifications to parameters
+        self.update_param_dict()
 
         def mi_model_noise(simX, group, t = 0):
             """Full deterministic MI model
@@ -229,65 +266,65 @@ class ModelMapChangesConcVar():
             def H(x): return 1 if x > 0 else 0
 
             # steady-state function for REM-ON popluation
-            def R_inf(c): return X_inf(c, self.R_max, self.beta_R, self.alpha_R)
+            def R_inf(c): return X_inf(c, self.paramDict['R_max'], self.paramDict['beta_R'], self.paramDict['alpha_R'])
             # firing rate of REM (R) population
-            dF_R = (R_inf(C_Roff * self.g_Roff2R + C_W * self.g_W2R + sigma_R) - F_R) / self.tau_R
+            dF_R = (R_inf(C_Roff * self.paramDict['g_Roff2R'] + C_W * self.paramDict['g_W2R'] + sigma_R) - F_R) / self.paramDict['tau_R']
             # steady state for neurotransmitter concentration:
-            def CR_inf(x): return CX_inf(x, self.gamma_R)
+            def CR_inf(x): return CX_inf(x, self.paramDict['gamma_R'])
             # dynamics for neurotransmitter
-            dC_R = (zeta_Ron * CR_inf(F_R) - C_R) / self.tau_CR
-            dC_Rf = (CR_inf(F_R) - C_Rf) / self.tau_CRf
+            dC_R = (zeta_Ron * CR_inf(F_R) - C_R) / self.paramDict['tau_CR']
+            dC_Rf = (CR_inf(F_R) - C_Rf) / self.paramDict['tau_CRf']
 
             # homeostatic REM pressure
-            if F_W > self.theta_W:
-                dstp = self.g_W2stp * (self.stp_r - stp) / self.tau_stpW # stp decreases during wake
+            if F_W > self.paramDict['theta_W']:
+                dstp = self.paramDict['g_W2stp'] * (self.paramDict['stp_r'] - stp) / self.paramDict['tau_stpW'] # stp decreases during wake
                 # dstp = 0 # stp constant during wake
             else:
-                dstp = (H(self.theta_R - F_R) * (self.stp_max - stp)) / self.tau_stpup + \
-                    (H(F_R - self.theta_R) * (self.stp_min - stp)) / self.tau_stpdown
+                dstp = (H(self.paramDict['theta_R'] - F_R) * (self.paramDict['stp_max'] - stp)) / self.paramDict['tau_stpup'] + \
+                    (H(F_R - self.paramDict['theta_R']) * (self.paramDict['stp_min'] - stp)) / self.paramDict['tau_stpdown']
 
             # update omega
             # parameter determining, how likely it is that a excitatory stimulus will happen during REM sleep
-            if F_R > self.theta_R:
-                domega = (self.omega_max - omega) / self.tau_omega
+            if F_R > self.paramDict['theta_R']:
+                domega = (self.paramDict['omega_max'] - omega) / self.paramDict['tau_omega']
             else:
-                domega = (self.omega_min - omega) / self.tau_omega
+                domega = (self.paramDict['omega_min'] - omega) / self.paramDict['tau_omega']
 
             # update delta
-            ddelta = -delta / self.tau_stim
+            ddelta = -delta / self.paramDict['tau_stim']
 
             # REM-OFF population
-            def beta_Roff(y): return beta_X(y, self.k1_Roff, self.k2_Roff)
-            def Roff_inf(c): return X_inf(c, self.Roff_max, beta_Roff(stp), self.alpha_Roff)
-            dF_Roff = (Roff_inf(C_R * self.g_R2Roff + C_W * self.g_W2Roff + \
-                self.delta2Roff * delta + sigma_Roff) - F_Roff) / self.tau_Roff
+            def beta_Roff(y): return beta_X(y, self.paramDict['k1_Roff'], self.paramDict['k2_Roff'])
+            def Roff_inf(c): return X_inf(c, self.paramDict['Roff_max'], beta_Roff(stp), self.paramDict['alpha_Roff'])
+            dF_Roff = (Roff_inf(C_R * self.paramDict['g_R2Roff'] + C_W * self.paramDict['g_W2Roff'] + \
+                self.paramDict['delta2Roff'] * delta + sigma_Roff) - F_Roff) / self.paramDict['tau_Roff']
 
-            def CRoff_inf(x): return CX_inf(x, self.gamma_Roff)
-            dC_Roff = (zeta_Roff * CRoff_inf(F_Roff) - C_Roff) / self.tau_CRoff
+            def CRoff_inf(x): return CX_inf(x, self.paramDict['gamma_Roff'])
+            dC_Roff = (zeta_Roff * CRoff_inf(F_Roff) - C_Roff) / self.paramDict['tau_CRoff']
 
             # Wake population
-            def W_inf(c): return X_inf(c, self.W_max, self.beta_W, self.alpha_W)
+            def W_inf(c): return X_inf(c, self.paramDict['W_max'], self.paramDict['beta_W'], self.paramDict['alpha_W'])
             # firing rate of REM (R) population
-            dF_W = (W_inf(C_S * self.g_S2W + C_Rf * self.g_R2W +
-                        C_Roff * self.g_Roff2W + self.delta2W * delta + sigma_W) - F_W) / self.tau_W
+            dF_W = (W_inf(C_S * self.paramDict['g_S2W'] + C_Rf * self.paramDict['g_R2W'] +
+                        C_Roff * self.paramDict['g_Roff2W'] + self.paramDict['delta2W'] * delta + sigma_W) - F_W) / self.paramDict['tau_W']
             # steady state for neurotransmitter concentration:
-            def CW_inf(x): return CX_inf(x, self.gamma_W)
+            def CW_inf(x): return CX_inf(x, self.paramDict['gamma_W'])
             # dynamics for neurotransmitter
-            dC_W = (zeta_W * CW_inf(F_W) - C_W) / self.tau_CW
+            dC_W = (zeta_W * CW_inf(F_W) - C_W) / self.paramDict['tau_CW']
 
             # homeostatic sleep drive
-            dh = (H(F_W - self.theta_W) * (self.h_max - h)) / self.tau_hup + \
-                (H(self.theta_W - F_W) * (self.h_min - h)) / self.tau_hdown
+            dh = (H(F_W - self.paramDict['theta_W']) * (self.paramDict['h_max'] - h)) / self.paramDict['tau_hup'] + \
+                (H(self.paramDict['theta_W'] - F_W) * (self.paramDict['h_min'] - h)) / self.paramDict['tau_hdown']
 
             # Sleep population
-            def beta_S(y): return beta_X(y, self.k1_S,self. k2_S)
-            def S_inf(c): return X_inf(c, self.S_max, beta_S(h), self.alpha_S)
+            def beta_S(y): return beta_X(y, self.paramDict['k1_S'],self.paramDict['k2_S'])
+            def S_inf(c): return X_inf(c, self.paramDict['S_max'], beta_S(h), self.paramDict['alpha_S'])
             # firing rate of REM (R) population
-            dF_S = (S_inf(C_W * self.g_W2S + C_Roff * self.g_Roff2S + sigma_S) - F_S) / self.tau_S
+            dF_S = (S_inf(C_W * self.paramDict['g_W2S'] + C_Roff * self.paramDict['g_Roff2S'] + sigma_S) - F_S) / self.paramDict['tau_S']
             # steady state for neurotransmitter concentration:
-            def CS_inf(x): return CX_inf(x, self.gamma_S)
+            def CS_inf(x): return CX_inf(x, self.paramDict['gamma_S'])
             # dynamics for neurotransmitter
-            dC_S = (zeta_S * CS_inf(F_S) - C_S) / self.tau_CS
+            dC_S = (zeta_S * CS_inf(F_S) - C_S) / self.paramDict['tau_CS']
 
             dsigma = 0
             dzeta_Ron = 0
@@ -337,7 +374,7 @@ class ModelMapChangesConcVar():
                             refract_cooldown = gap / self.dt
                     else:
                         # check for transition out of REM
-                        if simX[i-2, 0] > self.theta_R and simX[i-1, 0] < self.theta_R:
+                        if simX[i-2, 0] > self.paramDict['theta_R'] and simX[i-1, 0] < self.paramDict['theta_R']:
                             # apply optogenetic activation
                             simX[i-1, -1] = sigma
                             # set counter to maintain duration for future periods (decremented by 1 for current period)
@@ -372,7 +409,7 @@ class ModelMapChangesConcVar():
                 
                 if p > 0:
                     # print "motor noise"
-                    simX[i, -3] += self.delta_update  # 10, 3
+                    simX[i, -3] += self.paramDict['delta_update']  # 10, 3
 
                 #zeta updates
                 lambdaR = 0.01
@@ -407,8 +444,8 @@ class ModelMapChangesConcVar():
         W = self.X[:, 3]
         simH = np.zeros((1, len(R)))
 
-        idx_r = np.where(R > self.theta_R)[0]
-        idx_w = np.where(W > self.theta_W)[0]
+        idx_r = np.where(R > self.paramDict['theta_R'])[0]
+        idx_w = np.where(W > self.paramDict['theta_W'])[0]
         simH[0, :] = 3
         simH[0, idx_r] = 1
         simH[0, idx_w] = 2
@@ -476,8 +513,8 @@ class ModelMapChangesConcVar():
         W = self.X[:, 3]
         simH = np.zeros((1, len(R)))
 
-        idx_r = np.where(R > self.theta_R)[0]
-        idx_w = np.where(W > self.theta_W)[0]
+        idx_r = np.where(R > self.paramDict['theta_R'])[0]
+        idx_w = np.where(W > self.paramDict['theta_W'])[0]
         simH[0, :] = 3
         simH[0, idx_r] = 1
         simH[0, idx_w] = 2

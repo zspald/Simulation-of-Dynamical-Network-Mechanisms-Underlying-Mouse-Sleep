@@ -17,6 +17,7 @@ import seaborn as sns
 from matplotlib import patches
 from scipy import signal, stats
 from tqdm import tqdm, trange
+import scipy.io as sio
 
 from ModelMapChanges import ModelMapChanges
 from ModelWeber import ModelWeber
@@ -737,20 +738,6 @@ else:
 print('----- Funnel-Solve -----')
 scores2, models2 = funnel_solve(div, 8, group, sigma, dur, delay, noise, paramSetsD, 'D')
 
-# %%
-# mMC = ModelMapChanges(X0, dt)
-# mMC.g_Roff2R = -7.0
-# mMC.g_R2Roff = -5.0
-# mMC.tau_stpdown = 1650
-# mMC.tau_stpup = 1650
-
-# mMC.run_mi_model(72, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
-# mMC.hypnogram(p=1)
-# s2 = score_model(mMC, pr=1, p=1)
-# # mMC.avg_Ron_and_Roff_by_state()
-# _,_,_ = mMC.inter_REM(p=1, nremOnly=False, log=False)
-# # _,_,_ = mMC.inter_REM(p=1, nremOnly=False, log=True)
-# # laser_trig_percents([mMC.X], [mMC.H], dt, 600, 300, ci='None')
 
 # %%
 ##### STANDARD MODEL #####
@@ -770,11 +757,13 @@ mMCCV = ModelMapChangesConcVar(IC_conc_var, dt)
 # _,_,_ = mMCCV.inter_REM(p=1, nremOnly=False, log=False)
 
 mMCCV.run_mi_model(80 + 2, group=group, sigma=sigma, dur=dur, delay=delay, gap=gap, noise=noise, refractory_activation=False)
+# mMCCV.load_model_data('mMCCV_8hr')
 mMCCV.hypnogram_fig1(p=1, save=False, filename='no_noise_hysteresis_test_hypno')
 # mMCCV.hypnogram_fig1(p=1, p_zoom=1, save=True, filename='fig3_optoHypno')
 sCV = score_model(mMCCV, pr=1, p=1)
+mMCCV.save_model_data('mMCCV_80hr', overwrite=False)
 # ron_rem, ron_wake, ron_nrem, roff_rem, roff_wake, roff_nrem = mMCCV.avg_Ron_and_Roff_by_state()
-a,b,c = mMCCV.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, rem_pre_split=False, save=False, filename='fig1_remPre_%.1f_w2stp_%.1f_w2Roff' % (mMCCV.g_W2stp, mMCCV.g_W2Roff))
+# a,b,c = mMCCV.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, rem_pre_split=False, save=False, filename='fig1_remPre_%.1f_w2stp_%.1f_w2Roff' % (mMCCV.g_W2stp, mMCCV.g_W2Roff))
 # stp_hist = mMCCV.end_of_state_stp_hist('rem', save_fig=True)
 # d = mMCCV.stp_nrem_after_rem(p=1, save_fig=True)
 # mbRon, mbRoff, mbstp, mbDelta, mlRon, mlRoff, mlstp, mlDelta = mMCCV.avg_Ron_Roff_seq_REM()
@@ -793,6 +782,7 @@ a,b,c = mMCCV.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, rem_pre_sp
 
 # print(f'Average cW during sleep: {avg_sleep_W}') #TODO
 # print(f'Average fW during sleep: {avg_sleep_W}')
+
 
 # %% Save data in .mat file for Dr. Weber
 
@@ -983,5 +973,17 @@ mDun.inter_REM(p=1, seq_thresh=100, nremOnly=True, log=True, rem_pre_split=False
 # mTest.inter_REM()
 
 # %%
+# mMC = ModelMapChanges(X0, dt)
+# mMC.g_Roff2R = -7.0
+# mMC.g_R2Roff = -5.0
+# mMC.tau_stpdown = 1650
+# mMC.tau_stpup = 1650
 
+# mMC.run_mi_model(72, group=group, sigma=sigma, dur=dur, delay=delay, noise=noise)
+# mMC.hypnogram(p=1)
+# s2 = score_model(mMC, pr=1, p=1)
+# # mMC.avg_Ron_and_Roff_by_state()
+# _,_,_ = mMC.inter_REM(p=1, nremOnly=False, log=False)
+# # _,_,_ = mMC.inter_REM(p=1, nremOnly=False, log=True)
+# # laser_trig_percents([mMC.X], [mMC.H], dt, 600, 300, ci='None')
 
