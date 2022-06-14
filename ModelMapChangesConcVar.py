@@ -2699,9 +2699,11 @@ class ModelMapChangesConcVar():
         # get inter-REM sequences
         interSeqs = sleepy.get_sequences(np.where(self.H[0] != 1)[0])
 
-        # delete first and last inter period so all periods are REM->inter->REM
-        interSeqs = np.delete(interSeqs, 0)
-        interSeqs = np.delete(interSeqs, -1)
+        # delete first and last inter period if sleep begins or ends with inter period so all periods are REM->inter->REM
+        if self.H[0][0] != 1:
+            interSeqs = np.delete(interSeqs, 0)
+        if self.H[0][-1] != 1:
+            interSeqs = np.delete(interSeqs, -1)
 
         # get REM sequences
         remSeqs = sleepy.get_sequences(np.where(self.H[0] == 1)[0])
@@ -2726,10 +2728,12 @@ class ModelMapChangesConcVar():
 
                 # append to different array in inter period is only nrem vs nrem and wake
                 if 2 in self.H[0][interSeqs[i]]:
-                    trace_burst_with_wake.append(interSeqs[i])
+                    # trace_burst_with_wake.append(interSeqs[i])
+                    trace_burst_with_wake.append(temp)
                     scatter_burst_with_wake.append(interSeqs[i][min_inter])
                 else:
-                    trace_burst_nrem_only.append(interSeqs[i])
+                    # trace_burst_nrem_only.append(interSeqs[i])
+                    trace_burst_nrem_only.append(temp)
                     scatter_burst_nrem_only.append(interSeqs[i][min_inter])
 
 
@@ -2760,7 +2764,7 @@ class ModelMapChangesConcVar():
 
         # create colors for sequences
         color = []
-        num_lines = 10
+        num_lines = 1
         for i in range(num_lines):
             color.append('#%06X' % randint(0, 0xFFFFFF))
 
@@ -2775,8 +2779,8 @@ class ModelMapChangesConcVar():
         if trace_plot:
             for i in range(num_lines):
             # for i in range(len(burst_fRon_data)):
-                plt.plot(trace_burst_stp_nrem_only[i], trace_burst_fRon_nrem_only[i], color='red', linewidth=loop_lw+0.35)
-                plt.plot(trace_burst_stp_with_wake[i], trace_burst_fRon_with_wake[i], color='green', linewidth=loop_lw+0.35)
+                plt.plot(trace_burst_stp_nrem_only[i+5], trace_burst_fRon_nrem_only[i+5], color='red', linewidth=loop_lw+0.35)
+                # plt.plot(trace_burst_stp_with_wake[i], trace_burst_fRon_with_wake[i], color='green', linewidth=loop_lw+0.35)
 
         if scatter_plot:
             plt.scatter(scatter_stp_data_nrem_only, scatter_fRon_data_nrem_only, color='red')
@@ -2798,6 +2802,119 @@ class ModelMapChangesConcVar():
 
         plt.show()
     
+    def hysteresis_traj(self, seq_thresh=150, save_fig=False, filename='hysteresis_traj'):
+        # load steady state hysteresis data
+        stab_high = np.load('stab_high_fr.npy', allow_pickle=True)
+        stab_low = np.load('stab_low_fr.npy', allow_pickle=True)
+        instab = np.load('instab_fr.npy', allow_pickle=True)
+
+        # extract fRon and stp data
+        fRon_data = self.X[:,0]
+        stp_data = self.X[:,9]
+
+        # get inter-REM sequences
+        interSeqs = sleepy.get_sequences(np.where(self.H[0] != 1)[0])
+
+        # delete first and last inter period if sleep begins or ends with inter period so all periods are REM->inter->REM
+        if self.H[0][0] != 1:
+            interSeqs = np.delete(interSeqs, 0)
+        if self.H[0][-1] != 1:
+            interSeqs = np.delete(interSeqs, -1)
+
+        # get REM sequences
+        remSeqs = sleepy.get_sequences(np.where(self.H[0] == 1)[0])
+
+        # # function to get number of NREM states from inter-REM sequence
+        # def nrem_in_inter(inter_seq, states):
+        #     # intialize nrem counter
+        #     nrem_count = 0
+
+        #     # check state of each element of the inter-REM sequence
+        #     for ind in inter_seq:
+        #         # increment count if state is nrem
+        #         if states[ind] == 3:
+        #             nrem_count += 1
+
+        #     return nrem_count
+
+        # find burst REM periods followed by single REM period where inter-REM is only NREM
+        trace_rem1 = []
+        trace_rem2 = []
+        trace_inter1 = []
+        trace_inter2 = []
+        for i in range(1, len(interSeqs)):
+            if len(interSeqs[i-1]) * self.dt < seq_thresh and len(interSeqs[i]) * self.dt >= seq_thresh \
+            and 2 not in self.H[0][interSeqs[i-1]] and 2 not in self.H[0][interSeqs[i]]:
+                # save state indices in separate lists
+                trace_rem1.append(remSeqs[i-1])
+                trace_inter1.append(interSeqs[i-1])
+                trace_rem2.append(remSeqs[i])
+                trace_inter2.append(interSeqs[i])
+
+
+        # initialize lists to hold paired fRon-stp data
+        trace_rem1_fRon = []
+        trace_rem1_stp = []
+        trace_rem2_fRon = []
+        trace_rem2_stp = []
+        trace_inter1_fRon = []
+        trace_inter1_stp = []
+        trace_inter2_fRon = []
+        trace_inter2_stp = []
+        
+        # get paired fRon-stp for first REM sequence
+        for seq in trace_rem1:
+            trace_rem1_fRon.append(fRon_data[seq])
+            trace_rem1_stp.append(stp_data[seq])
+
+        # get paired fRon-stp for second REM sequence
+        for seq in trace_rem2:
+            trace_rem2_fRon.append(fRon_data[seq])
+            trace_rem2_stp.append(stp_data[seq])
+
+        # get paired fRon-stp for first inter sequence
+        for seq in trace_inter1:
+            trace_inter1_fRon.append(fRon_data[seq])
+            trace_inter1_stp.append(stp_data[seq])
+
+        # get paired fRon-stp for second inter sequence
+        for seq in trace_inter2:
+            trace_inter2_fRon.append(fRon_data[seq])
+            trace_inter2_stp.append(stp_data[seq])
+
+        # create colors for sequences
+        color = []
+        num_lines = 1
+        for i in range(num_lines):
+            color.append('#%06X' % randint(0, 0xFFFFFF))
+        loop_lw = 1
+        ind_shift = 6
+
+        for i in range(num_lines):
+            plt.figure()
+
+            plt.plot(trace_rem1_stp[i+ind_shift], trace_rem1_fRon[i+ind_shift], color='red', linewidth=loop_lw+0.5)
+            plt.plot(trace_inter1_stp[i+ind_shift], trace_inter1_fRon[i+ind_shift], color='orange', linewidth=loop_lw+0.5)
+            plt.plot(trace_rem2_stp[i+ind_shift], trace_rem2_fRon[i+ind_shift], color='green', linewidth=loop_lw+0.5)
+            plt.plot(trace_inter2_stp[i+ind_shift], trace_inter2_fRon[i+ind_shift], color='blue', linewidth=loop_lw+0.5)
+
+
+            plt.plot(stab_low[:,0], stab_low[:,1], color='black', lw=3)
+            plt.plot(stab_high[:,0], stab_high[:,1], color='black', lw=3)            
+            plt.plot(instab[:,0], instab[:,1], '--', color='gray', lw=3)
+
+            plt.axhline(y=self.theta_R, color='k', linestyle='dashed')
+            plt.xlabel('stp')
+            plt.ylabel('fRon')
+            plt.xlim([0.6, 1.0])
+            sns.despine()
+
+            if save_fig:
+                plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
+
+            plt.show()
+
+
     def end_of_state_stp_hist(self, state_name, save_fig=False, filename='endOfState_stp_%s'):
 
         state_map = {'rem': 1, 'wake': 2, 'nrem': 3}
