@@ -14,7 +14,7 @@ from matplotlib import patches
 from matplotlib import cm
 from scipy import signal, stats
 from sklearn.mixture import GaussianMixture
-from pingouin import compute_bootci
+# from pingouin import compute_bootci
 from random import randint
 
 import sleepy
@@ -864,12 +864,12 @@ class ModelTest():
         #get 95 CIs
         ron_ci = np.zeros((2,3))
         roff_ci = np.zeros((2,3))
-        ron_ci[:,0] = compute_bootci(ron_rem, func='mean') - avg_by_state[0]
-        ron_ci[:,1] = compute_bootci(ron_wake, func='mean') - avg_by_state[1]
-        ron_ci[:,2] = compute_bootci(ron_nrem, func='mean') - avg_by_state[2]
-        roff_ci[:,0] = compute_bootci(roff_rem, func='mean') - avg_by_state[3]
-        roff_ci[:,1] = compute_bootci(roff_wake, func='mean') - avg_by_state[4]
-        roff_ci[:,2] = compute_bootci(roff_nrem, func='mean') - avg_by_state[5]
+        # ron_ci[:,0] = compute_bootci(ron_rem, func='mean') - avg_by_state[0]
+        # ron_ci[:,1] = compute_bootci(ron_wake, func='mean') - avg_by_state[1]
+        # ron_ci[:,2] = compute_bootci(ron_nrem, func='mean') - avg_by_state[2]
+        # roff_ci[:,0] = compute_bootci(roff_rem, func='mean') - avg_by_state[3]
+        # roff_ci[:,1] = compute_bootci(roff_wake, func='mean') - avg_by_state[4]
+        # roff_ci[:,2] = compute_bootci(roff_nrem, func='mean') - avg_by_state[5]
 
         # #save standard deviation for error in plot
         # ron_std = np.zeros(3)
@@ -1308,7 +1308,7 @@ class ModelTest():
         norm_FRs_rem = []
         for entry in rem_periods:
             to_np = np.array(entry)
-            norm_FRs_rem.append(time_morph(to_np, nstates_rem))
+            norm_FRs_rem.append(self.time_morph(to_np, nstates_rem))
         norm_FRs_rem = np.array(norm_FRs_rem)
 
         #combine rem and inter-REM into single slice of FR data
@@ -1431,9 +1431,9 @@ class ModelTest():
         #check nrem times before and after each rem period: first of sequential episodes will have
         #a time in nrem > 100s prior to rem period and time <= 100s after REM period
         for seq in remSeqs:
-            if (nrem_before(self, seq[0])) > 100 and (nrem_after(self, seq[-1])) <= 100:
+            if (self.nrem_before(self, seq[0])) > 100 and (self.nrem_after(self, seq[-1])) <= 100:
                 firstDurs.append(len(seq) * self.dt)
-            elif (nrem_before(self, seq[0])) > 100 and (nrem_after(self, seq[-1]) > 100):
+            elif (self.nrem_before(self, seq[0])) > 100 and (self.nrem_after(self, seq[-1]) > 100):
                 singleDurs.append(len(seq) * self.dt)
 
         avgFirstOfSeq = np.average(firstDurs)

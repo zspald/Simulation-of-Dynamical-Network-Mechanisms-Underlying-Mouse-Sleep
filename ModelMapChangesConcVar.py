@@ -15,7 +15,7 @@ from matplotlib import patches
 from matplotlib import cm
 from scipy import signal, stats
 from sklearn.mixture import GaussianMixture
-from pingouin import compute_bootci
+# from pingouin import compute_bootci
 from random import randint
 import os
 import shutil
@@ -912,12 +912,12 @@ class ModelMapChangesConcVar():
         #get 95 CIs
         ron_ci = np.zeros((2,3))
         roff_ci = np.zeros((2,3))
-        ron_ci[:,0] = compute_bootci(ron_rem, func='mean') - avg_by_state[0]
-        ron_ci[:,1] = compute_bootci(ron_wake, func='mean') - avg_by_state[1]
-        ron_ci[:,2] = compute_bootci(ron_nrem, func='mean') - avg_by_state[2]
-        roff_ci[:,0] = compute_bootci(roff_rem, func='mean') - avg_by_state[3]
-        roff_ci[:,1] = compute_bootci(roff_wake, func='mean') - avg_by_state[4]
-        roff_ci[:,2] = compute_bootci(roff_nrem, func='mean') - avg_by_state[5]
+        # ron_ci[:,0] = compute_bootci(ron_rem, func='mean') - avg_by_state[0]
+        # ron_ci[:,1] = compute_bootci(ron_wake, func='mean') - avg_by_state[1]
+        # ron_ci[:,2] = compute_bootci(ron_nrem, func='mean') - avg_by_state[2]
+        # roff_ci[:,0] = compute_bootci(roff_rem, func='mean') - avg_by_state[3]
+        # roff_ci[:,1] = compute_bootci(roff_wake, func='mean') - avg_by_state[4]
+        # roff_ci[:,2] = compute_bootci(roff_nrem, func='mean') - avg_by_state[5]
 
         # #save standard deviation for error in plot
         # ron_std = np.zeros(3)
@@ -2802,14 +2802,15 @@ class ModelMapChangesConcVar():
 
         plt.show()
     
-    def hysteresis_traj(self, seq_thresh=150, save_fig=False, filename='hysteresis_traj'):
+    def hysteresis_traj(self, seq_thresh=150, ind_shift=0, save_fig=False, filename='hysteresis_traj'):
         # load steady state hysteresis data
         stab_high = np.load('stab_high_fr.npy', allow_pickle=True)
         stab_low = np.load('stab_low_fr.npy', allow_pickle=True)
         instab = np.load('instab_fr.npy', allow_pickle=True)
 
-        # extract fRon and stp data
+        # extract fRon, fRoff, and stp data
         fRon_data = self.X[:,0]
+        fRoff_data = self.X[:,1]
         stp_data = self.X[:,9]
 
         # get inter-REM sequences
@@ -2842,45 +2843,70 @@ class ModelMapChangesConcVar():
         trace_rem2 = []
         trace_inter1 = []
         trace_inter2 = []
-        for i in range(1, len(interSeqs)):
+        trace_inter3 = []
+        for i in range(2, len(interSeqs)):
             if len(interSeqs[i-1]) * self.dt < seq_thresh and len(interSeqs[i]) * self.dt >= seq_thresh \
             and 2 not in self.H[0][interSeqs[i-1]] and 2 not in self.H[0][interSeqs[i]]:
                 # save state indices in separate lists
+                trace_inter1.append(interSeqs[i-2][-1000:])
                 trace_rem1.append(remSeqs[i-1])
-                trace_inter1.append(interSeqs[i-1])
+                trace_inter2.append(interSeqs[i-1])
                 trace_rem2.append(remSeqs[i])
-                trace_inter2.append(interSeqs[i])
+                trace_inter3.append(interSeqs[i][:1000])
 
 
         # initialize lists to hold paired fRon-stp data
         trace_rem1_fRon = []
+        trace_rem1_fRoff = []
         trace_rem1_stp = []
         trace_rem2_fRon = []
+        trace_rem2_fRoff = []
         trace_rem2_stp = []
         trace_inter1_fRon = []
+        trace_inter1_fRoff = []
         trace_inter1_stp = []
         trace_inter2_fRon = []
+        trace_inter2_fRoff = []
         trace_inter2_stp = []
+        trace_inter3_fRon = []
+        trace_inter3_fRoff = []
+        trace_inter3_stp = []
+
+        # list to hold start and end times of sequences
+        t_start = []
+        t_final = []
         
+        # get paired fRon-stp for first inter sequence
+        for seq in trace_inter1:
+            t_start.append(seq[0])
+            trace_inter1_fRon.append(fRon_data[seq])
+            trace_inter1_fRoff.append(fRoff_data[seq])
+            trace_inter1_stp.append(stp_data[seq])
+
         # get paired fRon-stp for first REM sequence
         for seq in trace_rem1:
             trace_rem1_fRon.append(fRon_data[seq])
+            trace_rem1_fRoff.append(fRoff_data[seq])
             trace_rem1_stp.append(stp_data[seq])
-
-        # get paired fRon-stp for second REM sequence
-        for seq in trace_rem2:
-            trace_rem2_fRon.append(fRon_data[seq])
-            trace_rem2_stp.append(stp_data[seq])
-
-        # get paired fRon-stp for first inter sequence
-        for seq in trace_inter1:
-            trace_inter1_fRon.append(fRon_data[seq])
-            trace_inter1_stp.append(stp_data[seq])
 
         # get paired fRon-stp for second inter sequence
         for seq in trace_inter2:
             trace_inter2_fRon.append(fRon_data[seq])
+            trace_inter2_fRoff.append(fRoff_data[seq])
             trace_inter2_stp.append(stp_data[seq])
+
+        # get paired fRon-stp for second REM sequence
+        for seq in trace_rem2:
+            trace_rem2_fRon.append(fRon_data[seq])
+            trace_rem2_fRoff.append(fRoff_data[seq])
+            trace_rem2_stp.append(stp_data[seq])
+
+        # get paired fRon-stp for third inter sequence
+        for seq in trace_inter3:
+            t_final.append(seq[-1])
+            trace_inter3_fRon.append(fRon_data[seq])
+            trace_inter3_fRoff.append(fRoff_data[seq])
+            trace_inter3_stp.append(stp_data[seq])
 
         # create colors for sequences
         color = []
@@ -2888,31 +2914,104 @@ class ModelMapChangesConcVar():
         for i in range(num_lines):
             color.append('#%06X' % randint(0, 0xFFFFFF))
         loop_lw = 1
-        ind_shift = 6
 
         for i in range(num_lines):
-            plt.figure()
+            # create figure structure
+            # print(f'ind_shift={ind_shift+i}')
+            f, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=[15,14], gridspec_kw={'height_ratios': [1.25, 1.25, 1.25, 10]})
+            # sns.set_context('paper')
+            sns.set_style('white')
 
-            plt.plot(trace_rem1_stp[i+ind_shift], trace_rem1_fRon[i+ind_shift], color='red', linewidth=loop_lw+0.5)
-            plt.plot(trace_inter1_stp[i+ind_shift], trace_inter1_fRon[i+ind_shift], color='orange', linewidth=loop_lw+0.5)
-            plt.plot(trace_rem2_stp[i+ind_shift], trace_rem2_fRon[i+ind_shift], color='green', linewidth=loop_lw+0.5)
-            plt.plot(trace_inter2_stp[i+ind_shift], trace_inter2_fRon[i+ind_shift], color='blue', linewidth=loop_lw+0.5)
+            # create time vector for plotting firing rate data
+            t = np.arange(0, (t_final[i+ind_shift] - t_start[i+ind_shift] + 1)*self.dt, self.dt)
+            t_ticks = np.linspace(t[0], t[-1], 7)
+            tick_labels = t_ticks / 3600
+            tick_labels = np.around(tick_labels, 2)
 
+            # plot hypnogram in colored segments
+            ax1.imshow(self.H[:, t_start[i+ind_shift]:t_final[i+ind_shift]])
+            cmap = plt.cm.jet
+            my_map = cmap.from_list(
+                'brstate', [[0, 1, 1], [1, 0, 1], [0.8, 0.8, 0.8]], 3)
+            tmp = ax1.imshow(self.H[:, t_start[i+ind_shift]:t_final[i+ind_shift]])
+            tmp.set_cmap(my_map)
+            ax1.set_ylabel('Hypnogram', rotation=0, ha='right', va='center')
+            ax1.axis('tight')
+            ax1.spines['top'].set_visible(False)
+            ax1.spines['right'].set_visible(False)
+            ax1.spines['bottom'].set_visible(False)
+            ax1.spines['left'].set_visible(False)
+            ax1.get_xaxis().set_visible(False)
+            ax1.get_yaxis().set_visible(False)
 
-            plt.plot(stab_low[:,0], stab_low[:,1], color='black', lw=3)
-            plt.plot(stab_high[:,0], stab_high[:,1], color='black', lw=3)            
-            plt.plot(instab[:,0], instab[:,1], '--', color='gray', lw=3)
+            # plot fRon data in colored segments
+            # ax2.plot(t, self.X[t_start[i+ind_shift]:t_final[i+ind_shift], 0])
+            end = len(trace_inter1_fRon[i+ind_shift])
+            ax2.plot(t[:end], trace_inter1_fRon[i+ind_shift], color='purple')
+            ax2.plot(t[end:end+len(trace_rem1_fRon[i+ind_shift])], trace_rem1_fRon[i+ind_shift], color='red')
+            end += len(trace_rem1_fRon[i+ind_shift])
+            ax2.plot(t[end:end+len(trace_inter2_fRon[i+ind_shift])], trace_inter2_fRon[i+ind_shift], color='orange')
+            end += len(trace_inter2_fRon[i+ind_shift])
+            ax2.plot(t[end:end+len(trace_rem2_fRon[i+ind_shift])], trace_rem2_fRon[i+ind_shift], color='green')
+            end += len(trace_rem2_fRon[i+ind_shift])
+            ax2.plot((t[end:])[:1000], trace_inter3_fRon[i+ind_shift], color='blue')
+            ax2.axhline(y=self.theta_R, color='k', linestyle='dashed')
+            # plt.setp(ax1.get_xticklabels(), visible=False)
+            ax2.set_ylabel('REM-On \nFiring Rate \n(Hz)', rotation=0, ha='right', va='center')
+            # plt.ylabel('Sleep \nFiring Rate \n(Hz)', rotation=0, ha='right', va='center')
+            ax2.set_xlim([0, (t_final[i+ind_shift] - t_start[i+ind_shift])*self.dt])
+            sns.despine(ax=ax2)
 
-            plt.axhline(y=self.theta_R, color='k', linestyle='dashed')
-            plt.xlabel('stp')
-            plt.ylabel('fRon')
-            plt.xlim([0.6, 1.0])
-            sns.despine()
+            # plot fRoff data in colored segments
+            # ax3.plot(t, self.X[t_start[i+ind_shift]:t_final[i+ind_shift], 1])
+            end = len(trace_inter1_fRoff[i+ind_shift])
+            ax3.plot(t[:end], trace_inter1_fRoff[i+ind_shift], color='purple')
+            ax3.plot(t[end:end+len(trace_rem1_fRoff[i+ind_shift])], trace_rem1_fRoff[i+ind_shift], color='red')
+            end += len(trace_rem1_fRoff[i+ind_shift])
+            ax3.plot(t[end:end+len(trace_inter2_fRoff[i+ind_shift])], trace_inter2_fRoff[i+ind_shift], color='orange')
+            end += len(trace_inter2_fRoff[i+ind_shift])
+            ax3.plot(t[end:end+len(trace_rem2_fRoff[i+ind_shift])], trace_rem2_fRoff[i+ind_shift], color='green')
+            end += len(trace_rem2_fRoff[i+ind_shift])
+            ax3.plot((t[end:])[:1000], trace_inter3_fRoff[i+ind_shift], color='blue')
+            # plt.setp(ax2.get_xticklabels(), visible=False)
+            ax3.set_ylabel('REM-Off \nFiring Rate \n(Hz)', rotation=0, ha='right', va='center')
+            ax3.set_xlabel('Time (s)')
+            # plt.ylabel('Wake \nFiring Rate \n(Hz)', rotation=0, ha='right', va='center')
+            ax3.set_xlim([0, (t_final[i+ind_shift] - t_start[i+ind_shift])*self.dt])
+            # ax3.axis('tight')
+            sns.despine(ax=ax3)
+
+            # share axes for time plots
+            # ax1.get_shared_x_axes().join(ax1, ax2, ax3)
+            # ax1.set_xticklabels([])
+            ax2.set_xticklabels([])
+
+            # plot hysteresis trajectory in colored segments
+            ax4.plot(trace_inter1_stp[i+ind_shift], trace_inter1_fRon[i+ind_shift], color='purple', linewidth=loop_lw+0.5)
+            ax4.plot(trace_rem1_stp[i+ind_shift], trace_rem1_fRon[i+ind_shift], color='red', linewidth=loop_lw+0.5)
+            ax4.plot(trace_inter2_stp[i+ind_shift], trace_inter2_fRon[i+ind_shift], color='orange', linewidth=loop_lw+0.5)
+            ax4.plot(trace_rem2_stp[i+ind_shift], trace_rem2_fRon[i+ind_shift], color='green', linewidth=loop_lw+0.5)
+            ax4.plot(trace_inter3_stp[i+ind_shift], trace_inter3_fRon[i+ind_shift], color='blue', linewidth=loop_lw+0.5)
+
+            # plot hysteresis stability data
+            ax4.plot(stab_low[:,0], stab_low[:,1], color='black', lw=3)
+            ax4.plot(stab_high[:,0], stab_high[:,1], color='black', lw=3)            
+            ax4.plot(instab[:,0], instab[:,1], '--', color='gray', lw=3)
+
+            ax4.axhline(y=self.theta_R, color='k', linestyle='dashed')
+            ax4.set_xlabel('REM Pressure')
+            ax4.set_ylabel('REM-On \nFiring Rate \n(Hz)', rotation=0, ha='right', va='center')
+            ax4.set_xlim([0.63, 0.97])
+            sns.despine(ax=ax3)
+
+            # f.tight_layout()
 
             if save_fig:
                 plt.savefig('figures/' + filename + '.pdf', bbox_inches = "tight", dpi = 100)
 
             plt.show()
+
+        return t, trace_inter3_fRon, trace_inter3_fRoff
 
 
     def end_of_state_stp_hist(self, state_name, save_fig=False, filename='endOfState_stp_%s'):
